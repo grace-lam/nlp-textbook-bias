@@ -1,0 +1,3 @@
+[submodule "textbook-analysis"]
+	path = textbook-analysis
+	url = https://github.com/ddemszky/textbook-analysis.git
