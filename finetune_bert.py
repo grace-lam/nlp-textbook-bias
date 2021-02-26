@@ -75,6 +75,7 @@ def finetune_bert(lm_datasets, data_collator):
     trainer.save_model(model_dir+'bert_mlm_textbook')
 
 def main():
+    gpu_check()
     lm_datasets, data_collator = load_data()
     os.makedirs(model_dir, exist_ok=True)
     finetune_bert(lm_datasets, data_collator)
