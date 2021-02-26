@@ -24,9 +24,6 @@ def gpu_check():
         print('No GPU available, using the CPU instead.')
         device = torch.device("cpu")
 
-def tokenize_function(examples):
-    return tokenizer(examples["text"])
-
 def group_texts(examples):
     # Concatenate all texts.
     concatenated_examples = {k: sum(examples[k], []) for k in examples.keys()}
@@ -43,6 +40,9 @@ def group_texts(examples):
     return result
 
 def load_data():
+    def tokenize_function(examples):
+        return tokenizer(examples["text"])
+
     datasets = load_dataset('text', data_files=[bert_input_file])
     tokenizer = AutoTokenizer.from_pretrained(model_checkpoint)
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm_probability=0.15)
