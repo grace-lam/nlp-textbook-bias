@@ -63,7 +63,7 @@ def finetune_bert(lm_datasets, data_collator):
         output_dir=model_dir+'train',
         logging_dir=model_dir+'logs',
         evaluation_strategy='steps',
-        eval_steps=10000,
+        eval_steps=4000,
         load_best_model_at_end=True,
     )
 
