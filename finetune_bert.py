@@ -7,7 +7,8 @@ from transformers import AutoModelForMaskedLM
 from transformers import DataCollatorForLanguageModeling
 from transformers import Trainer, TrainingArguments
 
-bert_input_file = 'all_textbook_data.txt'
+train_file = 'train_textbook_data.txt'
+eval_file = 'eval_textbook_data.txt'
 model_checkpoint = 'bert-base-uncased'
 model_dir='bert_mlm/'
 block_size = 128
@@ -43,7 +44,7 @@ def load_data():
     def tokenize_function(examples):
         return tokenizer(examples["text"])
 
-    datasets = load_dataset('text', data_files=[bert_input_file])
+    datasets = load_dataset('text', data_files={"train": train_file, "validation": eval_file})
     tokenizer = AutoTokenizer.from_pretrained(model_checkpoint)
     data_collator = DataCollatorForLanguageModeling(tokenizer=tokenizer, mlm_probability=0.15)
     tokenized_datasets = datasets.map(tokenize_function, batched=True, num_proc=4, remove_columns=["text"])
@@ -60,7 +61,9 @@ def finetune_bert(lm_datasets, data_collator):
     
     training_args = TrainingArguments(
         output_dir=model_dir+'train',
-        logging_dir = model_dir+'logs',
+        logging_dir=model_dir+'logs',
+        evaluation_strategy='steps',
+        eval_steps=10000,
         load_best_model_at_end=True,
     )
 
@@ -68,6 +71,7 @@ def finetune_bert(lm_datasets, data_collator):
         model=model,
         args=training_args,
         train_dataset=lm_datasets["train"],
+        eval_dataset=lm_datasets["validation"],
         data_collator=data_collator,
     )
 
