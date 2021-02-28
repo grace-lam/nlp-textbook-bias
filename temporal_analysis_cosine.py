@@ -19,7 +19,8 @@ textbook_chronological = 'all_textbook_data.txt' # note: this needs to be in chr
 liwc_path = 'LIWC2015.csv' # make sure to include this file LOCALLY!
 results_dir = 'temporal_analysis_cosine_results/'
 
-NUM_ANALYSIS_SENTENCES = 30000 # number of sentences to analyze; set to -1 to analyze all
+NUM_ANALYSIS_SENTENCES = 30000 # number of sentences to analyze; set to -1 to analyze all words
+MODEL_OPTION = model_bert_textbook_dir # change this to analyze a different model!
 # These keywords follow Lucy and Desmzky's set up
 man_words = set(['man', 'men', 'male', 'he', 'his', 'him'])
 woman_words = set(['woman', 'women', 'female', 'she', 'her', 'hers'])
@@ -62,7 +63,7 @@ def _analyze_relations(gender_words, cosine_similarities, context_indices, curr_
 
 def get_temporal_cosine_similarities():
     # Load pre-trained model (weights) and make it return hidden states
-    model = AutoModelForMaskedLM.from_pretrained(model_bert_textbook_dir, output_hidden_states = True)
+    model = AutoModelForMaskedLM.from_pretrained(MODEL_OPTION, output_hidden_states = True)
     curr_index = 0
     woman_context_indices = []
     woman_cosine_similarities = []
