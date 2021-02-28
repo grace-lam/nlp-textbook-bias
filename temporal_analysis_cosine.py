@@ -4,6 +4,7 @@ import csv
 import os
 
 from datasets import load_dataset
+import matplotlib.pyplot as plt
 from transformers import AutoModelForMaskedLM
 from transformers import DataCollatorForLanguageModeling
 from transformers import Trainer, TrainingArguments
@@ -44,7 +45,7 @@ def get_temporal_cosine_similarities():
     context_indices = []
     cosine_similarities = []
     with open(textbook_chronological, 'r') as textbook_reader:
-        for sentence in list(textbook_reader)[:10000]:
+        for sentence in list(textbook_reader):
             sentence_set = set(sentence.split())
             woman_words_present = woman_words & sentence_set
             work_words_present = work_words & sentence_set
@@ -63,7 +64,6 @@ def get_temporal_cosine_similarities():
                              keyword_embeddings[work_word]))
                             context_indices.append(curr_index)
             curr_index += 1
-    print(cosine_similarities)
     with open(results_dir + "cosine_similarities.txt", "w") as output:
         output.write(str(cosine_similarities))
     with open(results_dir + "context_indices.txt", "w") as output:
@@ -71,7 +71,12 @@ def get_temporal_cosine_similarities():
     return context_indices, cosine_similarities
 
 def plot_temporal_changes(context_indices, cosine_similarities):
-    pass
+    plt.scatter(context_indices, cosine_similarities)
+    plt.xlabel('Context ID (Order of Sentence in Chronology)')
+    plt.ylabel('Cosine Similarity between Woman and Work word')
+    plt.title('Temporal Analysis of Woman-Work Relation')
+    plt.show()
+    plt.savefig(results_dir + "cosine_sim_plot.png")
 
 
 def main():
