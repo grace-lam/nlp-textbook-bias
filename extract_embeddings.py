@@ -11,9 +11,8 @@ from transformers import Trainer, TrainingArguments
 
 import finetune_bert
 
-model_dir = 'bert_mlm/'
 model_bert_pretrained = 'bert-base-uncased'
-model_bert_textbook = 'bert_mlm_textbook/pytorch_model.bin'
+model_bert_textbook_dir = 'bert_mlm/bert_mlm_textbook'
 
 def sentence_to_tokens(sentence):
     # we always use BERT's tokenizer
@@ -50,11 +49,12 @@ def retrieve_embeddings(tokens_tensor, segments_tensor, keyword, model_option):
         # All 12 hidden states from BERT model, I referenced this:
         # https://huggingface.co/transformers/_modules/transformers/modeling_outputs.html#MaskedLMOutput
         hidden_states = outputs.hidden_states
+        print(hidden_states)
 
 def main():
     sentence = 'this is a test sentence'
     tokens_tensor, segments_tensor = sentence_to_tokens(sentence)
-    retrieve_embeddings(tokens_tensor, segments_tensor, 'test', model_bert_pretrained)
+    retrieve_embeddings(tokens_tensor, segments_tensor, 'test', model_bert_textbook_dir)
     # gpu_check()
     # lm_datasets, data_collator = load_data()
     # os.makedirs(model_dir, exist_ok=True)
