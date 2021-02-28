@@ -16,10 +16,10 @@ import finetune_bert
 model_bert_pretrained = 'bert-base-uncased'
 model_bert_textbook_dir = 'bert_mlm/bert_mlm_textbook'
 textbook_chronological = 'all_textbook_data.txt' # note: this needs to be in chronological order
-liwc_path = 'LIWC2015.csv'
+liwc_path = 'LIWC2015.csv' # make sure to include this file LOCALLY!
 results_dir = 'temporal_analysis_cosine_results/'
 
-def get_work_keywords():
+def _get_work_keywords():
     work_words = []
     with open(liwc_path) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
@@ -30,7 +30,7 @@ def get_work_keywords():
                 work_words.append(row[TERM_INDEX])
     return work_words
 
-def cosine_similarity(vec_1, vec_2):
+def _cosine_similarity(vec_1, vec_2):
     # Calculate the cosine similarity
     return 1 - cosine(vec_1, vec_2)
 
@@ -38,14 +38,14 @@ def get_temporal_cosine_similarities():
     # These keywords follow Lucy and Desmzky's set up
     man_words = set(['man', 'men', 'male', 'he', 'his', 'him'])
     woman_words = set(['woman', 'women', 'female', 'she', 'her', 'hers'])
-    work_words = set(get_work_keywords())
+    work_words = set(_get_work_keywords())
     # Load pre-trained model (weights) and make it return hidden states
     model = AutoModelForMaskedLM.from_pretrained(model_bert_textbook_dir, output_hidden_states = True)
     curr_index = 0
     context_indices = []
     cosine_similarities = []
     with open(textbook_chronological, 'r') as textbook_reader:
-        for sentence in list(textbook_reader):
+        for sentence in list(textbook_reader)[:30000]: # change this to analyze more sentences
             sentence_set = set(sentence.split())
             woman_words_present = woman_words & sentence_set
             work_words_present = work_words & sentence_set
@@ -60,7 +60,7 @@ def get_temporal_cosine_similarities():
                 if woman_embeddings and work_embeddings:
                     for woman_word in woman_embeddings:
                         for work_word in work_embeddings:
-                            cosine_similarities.append(cosine_similarity(keyword_embeddings[woman_word],
+                            cosine_similarities.append(_cosine_similarity(keyword_embeddings[woman_word],
                              keyword_embeddings[work_word]))
                             context_indices.append(curr_index)
             curr_index += 1
