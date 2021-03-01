@@ -7,10 +7,10 @@ from transformers import AutoModelForMaskedLM
 from transformers import DataCollatorForLanguageModeling
 from transformers import Trainer, TrainingArguments
 
-train_file = 'train_textbook_data.txt'
-eval_file = 'eval_textbook_data.txt'
+train_file = 'data/80_10_10/train_textbook_data.txt'
+eval_file = 'data/80_10_10/dev_textbook_data.txt'
 model_checkpoint = 'bert-base-uncased'
-model_dir='bert_mlm/'
+model_dir='bert_mlm/80_10_10'
 block_size = 128
 
 def gpu_check():
