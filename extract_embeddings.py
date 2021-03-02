@@ -7,6 +7,7 @@ from transformers import AutoTokenizer
 import finetune_bert
 
 model_bert_pretrained = 'bert-base-uncased'
+block_size = 512
 
 def _sentence_to_tokens(sentence):
     # we always use BERT's tokenizer
@@ -14,7 +15,7 @@ def _sentence_to_tokens(sentence):
     # convert to BERT's tokenizer format
     marked_sentence = '[CLS] ' + sentence + ' [SEP]'
     # Tokenize our sentence with the BERT tokenizer.
-    tokenized_text = tokenizer.tokenize(marked_sentence)[:finetune_bert.block_size]
+    tokenized_text = tokenizer.tokenize(marked_sentence)[:block_size] # truncate
     # Map the token strings to their vocabulary indeces.
     indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
     # Mark each of the tokens as belonging to sentence "1" (to mark everything is
