@@ -21,7 +21,7 @@ textbook_chronological_dir = 'final_textbook_years/all_textbooks/'
 results_dir = 'temporal_analysis_cosine_results/'
 
 MODEL_OPTION = model_bert_textbook_dir # change this to analyze a different model!
-NUM_ANALYSIS_SENTENCES = 100 # number of sentences to analyze PER time period (change to -1 to do all)
+NUM_ANALYSIS_SENTENCES = -1 # number of sentences to analyze PER time period (change to -1 to do all)
 # These keywords follow Lucy and Desmzky's set up
 man_words = set(['man', 'men', 'male', 'he', 'his', 'him'])
 woman_words = set(['woman', 'women', 'female', 'she', 'her', 'hers'])
