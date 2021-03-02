@@ -6,6 +6,7 @@ import time
 
 from datasets import load_dataset
 import matplotlib.pyplot as plt
+import numpy as np
 from transformers import AutoModelForMaskedLM
 from transformers import DataCollatorForLanguageModeling
 from transformers import Trainer, TrainingArguments
@@ -14,6 +15,7 @@ from scipy import stats
 
 import extract_embeddings
 import finetune_bert
+import utilities
 
 model_bert_pretrained = 'bert-base-uncased'
 model_bert_textbook_dir = 'bert_mlm/80_10_10/bert_mlm_textbook'
@@ -22,6 +24,8 @@ results_dir = 'temporal_analysis_cosine_results/'
 
 MODEL_OPTION = model_bert_textbook_dir # change this to analyze a different model!
 NUM_ANALYSIS_SENTENCES = -1 # number of sentences to analyze PER time period (change to -1 to do all)
+LOAD_RESULTS = True # change this to False to rerun embedding extraction and get new results (will override folder!)
+
 # These keywords follow Lucy and Desmzky's set up
 man_words = set(['man', 'men', 'male', 'he', 'his', 'him'])
 woman_words = set(['woman', 'women', 'female', 'she', 'her', 'hers'])
@@ -29,6 +33,10 @@ home_words = set(['home', 'domestic', 'household', 'chores', 'family'])
 work_words = set(['work', 'labor', 'workers', 'economy', 'trade', 'business', 'jobs', 'company', 'industry', 'pay', 'working', 'salary', 'wage'])
 achievement_words = set(['power', 'authority', 'achievement', 'control', 'won', 'powerful', 'success', 'better', 'efforts', 'plan', 'tried', 'leader'])
 
+# Where to write/read results from
+results_paths = [results_dir + "woman_work_all_yr_cos.txt", results_dir + "man_work_all_yr_cos.txt",
+results_dir + "woman_home_all_yr_cos.txt", results_dir + "man_home_all_yr_cos.txt",
+results_dir + "woman_achiev_all_yr_cos.txt", results_dir + "man_achiev_all_yr_cos.txt"]
 
 def _cosine_similarity(vec_1, vec_2):
     # Calculate the cosine similarity
@@ -64,6 +72,7 @@ def get_temporal_cosine_similarities():
     man_home_all_yr_cos = {}
     woman_achiev_all_yr_cos = {}
     man_achiev_all_yr_cos = {}
+    results_cos = [woman_work_all_yr_cos, man_work_all_yr_cos, woman_home_all_yr_cos, man_home_all_yr_cos, woman_achiev_all_yr_cos, man_achiev_all_yr_cos]
     for file in os.listdir(os.fsencode(textbook_chronological_dir)):
          filename = os.fsdecode(file)
          if filename.endswith(".txt"):
@@ -88,19 +97,9 @@ def get_temporal_cosine_similarities():
                     _analyze_relations(man_words, home_words, man_home_yr, sentence, model)
                     _analyze_relations(woman_words, achievement_words, woman_achiev_yr, sentence, model)
                     _analyze_relations(man_words, achievement_words, man_achiev_yr, sentence, model)
-    with open(results_dir + "woman_work_all_yr_cos.txt", "w") as output:
-        output.write(str(woman_work_all_yr_cos))
-    with open(results_dir + "man_work_all_yr_cos.txt", "w") as output:
-        output.write(str(man_work_all_yr_cos))
-    with open(results_dir + "woman_home_all_yr_cos.txt", "w") as output:
-        output.write(str(woman_home_all_yr_cos))
-    with open(results_dir + "man_home_all_yr_cos.txt", "w") as output:
-        output.write(str(man_home_all_yr_cos))
-    with open(results_dir + "woman_achiev_all_yr_cos.txt", "w") as output:
-        output.write(str(woman_achiev_all_yr_cos))
-    with open(results_dir + "man_achiev_all_yr_cos.txt", "w") as output:
-        output.write(str(man_achiev_all_yr_cos))
-
+    for i, result in enumerate(results_cos):
+        with open(results_paths[i], "w") as output:
+            output.write(str(result))
     return woman_work_all_yr_cos, man_work_all_yr_cos, woman_home_all_yr_cos, man_home_all_yr_cos, woman_achiev_all_yr_cos, man_achiev_all_yr_cos
 
 def _get_years_and_sims(cosine_similarities, interest_word):
@@ -115,16 +114,54 @@ def _get_years_and_sims(cosine_similarities, interest_word):
                     years.append(year)
     return years, sims
 
+def _get_years_and_sims_box(cosine_similarities, interest_word):
+    years = [] # these are unique
+    sims = [] # a list of lists: one list for each year
+    for year in sorted(cosine_similarities.keys()):
+        tuple_to_sim = cosine_similarities[year]
+        year_sims = []
+        for tuple in tuple_to_sim:
+            if tuple[1] == interest_word:
+                for sim in tuple_to_sim[tuple]:
+                    year_sims.append(sim)
+        if year.endswith('00'):
+            years.append(year)
+        sims.append(year_sims)
+    return years, sims
+
 def plot_temporal_changes(woman_cosine_similarities, man_cosine_similarities, interest_word, liwc_category):
     woman_years, woman_sims = _get_years_and_sims(woman_cosine_similarities, interest_word)
     man_years, man_sims = _get_years_and_sims(man_cosine_similarities, interest_word)
-    plt.scatter(list(map(int,woman_years)), woman_sims, color='r', label='woman words')
-    plt.scatter(list(map(int,man_years)), man_sims, color='b', label='man words')
+    # Make scatter pots
+    woman_years = np.array(list(map(int,woman_years)))
+    man_years = np.array(list(map(int,man_years)))
+    plt.scatter(woman_years, woman_sims, color='r', label='woman words', alpha=0.1, marker="*")
+    plt.scatter(man_years, man_sims, color='b', label='man words', alpha=0.1, marker="o")
+    woman_m, woman_b = np.polyfit(woman_years, woman_sims, 1) # linear regression (degree 1)
+    plt.plot(woman_years, woman_m*woman_years + woman_b, color='r')
+    man_m, man_b = np.polyfit(man_years, man_sims, 1)
+    plt.plot(man_years, man_m*man_years + man_b, color='b')
     plt.xlabel('Approximate Year')
-    plt.ylabel('Cosine Similarity between Gender word and "%s"'%interest_word)
-    plt.title('Temporal Analysis of Gender-%s Relation (LIWC Category: %s)'%(interest_word, liwc_category))
+    plt.ylabel('Cosine Similarity between\nGender word and "%s"'%interest_word)
+    plt.title('Temporal Analysis of Gender-%s Relation\n(LIWC Category: %s)'%(interest_word, liwc_category))
     plt.legend()
     plt.savefig(results_dir + interest_word + "_temporal_cosine_sim_plot.png")
+    plt.close()
+
+
+    # Make box plot
+    woman_years_box, woman_sims_box = _get_years_and_sims_box(woman_cosine_similarities, interest_word)
+    man_years_box, man_sims_box = _get_years_and_sims_box(man_cosine_similarities, interest_word)
+    fig, ax = plt.subplots()
+    bp1 = ax.boxplot(woman_sims_box, positions=[i for i in range(1,45,3)], patch_artist=True ,boxprops={'facecolor': 'r'})
+    bp2 = ax.boxplot(man_sims_box, positions=[i for i in range(2,45,3)], patch_artist=True, boxprops={'facecolor': 'b'})
+    ax.set_xticks(range(0, 45, 6))
+    ax.set_xticklabels(woman_years_box)
+    plt.xlabel('Approximate Year')
+    plt.ylabel('Cosine Similarity between\nGender word and "%s"'%interest_word)
+    plt.title('Temporal Analysis of Gender-%s Relation\n(LIWC Category: %s)'%(interest_word, liwc_category))
+    ax.legend([bp1["boxes"][0], bp2["boxes"][0]], ['woman words', 'man words'])
+    plt.savefig(results_dir + interest_word + "_temporal_cosine_sim_boxplot.png")
     plt.close()
 
 def _get_average_similarity(sims, interest_word):
@@ -151,14 +188,17 @@ def _analyze_keyword_similarities(woman_sims, man_sims, keywords):
         woman_averages.append(woman_avg)
         man_averages.append(man_avg)
         t_val, p_val = stats.ttest_ind(woman_cosines, man_cosines)
-        with open(results_dir + "stats-tests.txt", "a") as output:
-            output.write("Man vs woman similarities to the word " + word + " have t-value %f and p-value %f \n" %(t_val, p_val))
+        with open(results_dir + "stats_tests.txt", "a") as output:
+            output.write("Man vs woman similarities to the word " + word +
+            " have averages %f and %f respectively and t-value %f and p-value %f \n"
+            %(man_avg, woman_avg, t_val, p_val))
     return woman_averages, man_averages
 
 def plot_static(woman_work, woman_home, woman_achiev, man_work, man_home, man_achiev):
     woman_work_avg, man_work_avg = _analyze_keyword_similarities(woman_work, man_work, work_words)
     woman_home_avg, man_home_avg = _analyze_keyword_similarities(woman_home, man_home, home_words)
-    woman_achiev_avg, man_achiev_avg = _analyze_keyword_similarities(woman_achiev, man_achiev, achievement_words)
+    woman_achiev_avg, man_achiev_avg = _analyze_keyword_similarities(woman_achiev, man_achiev,
+     achievement_words)
     plt.scatter(man_work_avg, woman_work_avg, color='b', label='work')
     for i, work_word in enumerate(work_words):
         plt.annotate(work_word, (man_work_avg[i], woman_work_avg[i]))
@@ -168,29 +208,38 @@ def plot_static(woman_work, woman_home, woman_achiev, man_work, man_home, man_ac
     plt.scatter(man_achiev_avg, woman_achiev_avg, color='r', label='achievement')
     for i, achiev_word in enumerate(achievement_words):
         plt.annotate(achiev_word, (man_achiev_avg[i], woman_achiev_avg[i]))
-    plt.xlabel('Man Terms (man,men,male,he,his,him)')
-    plt.ylabel('Woman Terms (woman,women,female,she,her,hers)')
+    plt.axline((0.2, 0.2), (0.3, 0.3), color='black')
+    plt.xlabel('Man Terms\n(man,men,male,he,his,him)')
+    plt.ylabel('Woman Terms\n(woman,women,female,she,her,hers)')
     plt.title('Temporally Averaged Cosine Similarities to...')
     plt.legend(title='LIWC category')
     plt.savefig(results_dir + "static_plot.png")
     plt.close()
 
+def make_all_plots(woman_work_cos, man_work_cos, woman_home_cos, man_home_cos,
+woman_achiev_cos, man_achiev_cos):
+    for work_word in work_words:
+        plot_temporal_changes(woman_work_cos, man_work_cos, work_word, "work")
+        print("completed plot for word %s"%work_word)
+    for home_word in home_words:
+        plot_temporal_changes(woman_home_cos, man_home_cos, home_word, "home")
+        print("completed plot for word %s"%home_word)
+    for achiev_word in achievement_words:
+        plot_temporal_changes(woman_achiev_cos, man_achiev_cos, achiev_word, "achievement")
+        print("completed plot for word %s"%achiev_word)
+    plot_static(woman_work_cos, woman_home_cos, woman_achiev_cos, man_work_cos, man_home_cos, man_achiev_cos)
+    print("completed static plot")
+
+
 def main():
     start_time = time.perf_counter()
     finetune_bert.gpu_check()
     os.makedirs(results_dir, exist_ok=True)
-    woman_work_all_yr_cos, man_work_all_yr_cos, woman_home_all_yr_cos, man_home_all_yr_cos, woman_achiev_all_yr_cos, man_achiev_all_yr_cos = get_temporal_cosine_similarities()
-    for work_word in work_words:
-        plot_temporal_changes(woman_work_all_yr_cos, man_work_all_yr_cos, work_word, "work")
-        print("completed plot for word %s"%work_word)
-    for home_word in home_words:
-        plot_temporal_changes(woman_home_all_yr_cos, man_home_all_yr_cos, home_word, "home")
-        print("completed plot for word %s"%home_word)
-    for achiev_word in achievement_words:
-        plot_temporal_changes(woman_achiev_all_yr_cos, man_achiev_all_yr_cos, achiev_word, "achievement")
-        print("completed plot for word %s"%achiev_word)
-    plot_static(woman_work_all_yr_cos, woman_home_all_yr_cos, woman_achiev_all_yr_cos, man_work_all_yr_cos, man_home_all_yr_cos, man_achiev_all_yr_cos)
-    print("completed static plot")
+    if not LOAD_RESULTS:
+        woman_work_cos, man_work_cos, woman_home_cos, man_home_cos, woman_achiev_cos, man_achiev_cos = get_temporal_cosine_similarities()
+    else:
+        woman_work_cos, man_work_cos, woman_home_cos, man_home_cos, woman_achiev_cos, man_achiev_cos = utilities.read_dicts_from_paths(results_paths)
+    make_all_plots(woman_work_cos, man_work_cos, woman_home_cos, man_home_cos, woman_achiev_cos, man_achiev_cos)
     end_time = time.perf_counter()
     print(f"This took {(end_time - start_time)/60:0.4f} minutes")
 
