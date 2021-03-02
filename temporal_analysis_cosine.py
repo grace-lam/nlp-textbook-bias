@@ -2,6 +2,7 @@
 
 import csv
 import os
+import time
 
 from datasets import load_dataset
 import matplotlib.pyplot as plt
@@ -9,17 +10,18 @@ from transformers import AutoModelForMaskedLM
 from transformers import DataCollatorForLanguageModeling
 from transformers import Trainer, TrainingArguments
 from scipy.spatial.distance import cosine
+from scipy import stats
 
 import extract_embeddings
 import finetune_bert
 
 model_bert_pretrained = 'bert-base-uncased'
 model_bert_textbook_dir = 'bert_mlm/80_10_10/bert_mlm_textbook'
-textbook_chronological_dir = 'final_textbook_year/all/'
+textbook_chronological_dir = 'final_textbook_years/all_textbooks/'
 results_dir = 'temporal_analysis_cosine_results/'
 
 MODEL_OPTION = model_bert_textbook_dir # change this to analyze a different model!
-NUM_ANALYSIS_SENTENCES = 1000 # number of sentences to analyze PER time period
+NUM_ANALYSIS_SENTENCES = 1000 # number of sentences to analyze PER time period (change to -1 to do all)
 # These keywords follow Lucy and Desmzky's set up
 man_words = set(['man', 'men', 'male', 'he', 'his', 'him'])
 woman_words = set(['woman', 'women', 'female', 'she', 'her', 'hers'])
@@ -128,6 +130,7 @@ def plot_temporal_changes(woman_cosine_similarities, man_cosine_similarities, in
 def _get_average_similarity(sims, interest_word):
     count = 0
     sum = 0
+    similarities = []
     for year in sims:
         tuple_to_sim = sims[year]
         for tuple in tuple_to_sim:
@@ -135,32 +138,27 @@ def _get_average_similarity(sims, interest_word):
                 for sim in tuple_to_sim[tuple]:
                     sum += sim
                     count += 1
+                    similarities.append(sim)
     count = max(count, 1) # to prevent division by zero
-    return sum/count
+    return sum/count, similarities
 
+def _analyze_keyword_similarities(woman_sims, man_sims, keywords):
+    woman_averages = []
+    man_averages = []
+    for word in keywords:
+        woman_avg, woman_cosines = _get_average_similarity(woman_sims, word)
+        man_avg, man_cosines = _get_average_similarity(man_sims, word)
+        woman_averages.append(woman_avg)
+        man_averages.append(man_avg)
+        t_val, p_val = stats.ttest_ind(woman_cosines, man_cosines)
+        with open(results_dir + "stats-tests.txt", "a") as output:
+            output.write("Man vs woman similarities to the word " + word + " have t-value %f and p-value %f \n" %(t_val, p_val))
+    return woman_averages, man_averages
 
 def plot_static(woman_work, woman_home, woman_achiev, man_work, man_home, man_achiev):
-    woman_work_avg = []
-    man_work_avg = []
-    for work_word in work_words:
-        woman_avg = _get_average_similarity(woman_work, work_word)
-        man_avg = _get_average_similarity(man_work, work_word)
-        woman_work_avg.append(woman_avg)
-        man_work_avg.append(man_avg)
-    woman_home_avg = []
-    man_home_avg = []
-    for home_word in home_words:
-        woman_avg = _get_average_similarity(woman_home, home_word)
-        man_avg = _get_average_similarity(man_home, home_word)
-        woman_home_avg.append(woman_avg)
-        man_home_avg.append(man_avg)
-    woman_achiev_avg = []
-    man_achiev_avg = []
-    for achiev_word in achievement_words:
-        woman_avg = _get_average_similarity(woman_achiev, achiev_word)
-        man_avg = _get_average_similarity(man_achiev, achiev_word)
-        woman_achiev_avg.append(woman_avg)
-        man_achiev_avg.append(man_avg)
+    woman_work_avg, man_work_avg = _analyze_keyword_similarities(woman_work, man_work, work_words)
+    woman_home_avg, man_home_avg = _analyze_keyword_similarities(woman_home, man_home, home_words)
+    woman_achiev_avg, man_achiev_avg = _analyze_keyword_similarities(woman_achiev, man_achiev, achievement_words)
     plt.scatter(man_work_avg, woman_work_avg, color='b', label='work')
     for i, work_word in enumerate(work_words):
         plt.annotate(work_word, (man_work_avg[i], woman_work_avg[i]))
@@ -178,6 +176,7 @@ def plot_static(woman_work, woman_home, woman_achiev, man_work, man_home, man_ac
     plt.close()
 
 def main():
+    start_time = time.perf_counter()
     finetune_bert.gpu_check()
     os.makedirs(results_dir, exist_ok=True)
     woman_work_all_yr_cos, man_work_all_yr_cos, woman_home_all_yr_cos, man_home_all_yr_cos, woman_achiev_all_yr_cos, man_achiev_all_yr_cos = get_temporal_cosine_similarities()
@@ -192,6 +191,8 @@ def main():
         print("completed plot for word %s"%achiev_word)
     plot_static(woman_work_all_yr_cos, woman_home_all_yr_cos, woman_achiev_all_yr_cos, man_work_all_yr_cos, man_home_all_yr_cos, man_achiev_all_yr_cos)
     print("completed static plot")
+    end_time = time.perf_counter()
+    print(f"This took {(end_time - start_time)/60:0.4f} minutes")
 
 if __name__ == '__main__':
     main()
