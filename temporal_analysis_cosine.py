@@ -21,7 +21,7 @@ textbook_chronological_dir = 'final_textbook_years/all_textbooks/'
 results_dir = 'temporal_analysis_cosine_results/'
 
 MODEL_OPTION = model_bert_textbook_dir # change this to analyze a different model!
-NUM_ANALYSIS_SENTENCES = 1000 # number of sentences to analyze PER time period (change to -1 to do all)
+NUM_ANALYSIS_SENTENCES = 100 # number of sentences to analyze PER time period (change to -1 to do all)
 # These keywords follow Lucy and Desmzky's set up
 man_words = set(['man', 'men', 'male', 'he', 'his', 'him'])
 woman_words = set(['woman', 'women', 'female', 'she', 'her', 'hers'])
@@ -118,8 +118,8 @@ def _get_years_and_sims(cosine_similarities, interest_word):
 def plot_temporal_changes(woman_cosine_similarities, man_cosine_similarities, interest_word, liwc_category):
     woman_years, woman_sims = _get_years_and_sims(woman_cosine_similarities, interest_word)
     man_years, man_sims = _get_years_and_sims(man_cosine_similarities, interest_word)
-    plt.scatter(woman_years, woman_sims, color='r', label='woman words')
-    plt.scatter(man_years, man_sims, color='b', label='man words')
+    plt.scatter(list(map(int,woman_years)), woman_sims, color='r', label='woman words')
+    plt.scatter(list(map(int,man_years)), man_sims, color='b', label='man words')
     plt.xlabel('Approximate Year')
     plt.ylabel('Cosine Similarity between Gender word and "%s"'%interest_word)
     plt.title('Temporal Analysis of Gender-%s Relation (LIWC Category: %s)'%(interest_word, liwc_category))
