@@ -2,6 +2,7 @@
 
 import csv
 import os
+import statistics
 import time
 
 from datasets import load_dataset
@@ -148,7 +149,6 @@ def plot_temporal_changes(woman_cosine_similarities, man_cosine_similarities, in
     plt.savefig(results_dir + interest_word + "_temporal_cosine_sim_plot.png")
     plt.close()
 
-
     # Make box plot
     woman_years_box, woman_sims_box = _get_years_and_sims_box(woman_cosine_similarities, interest_word)
     man_years_box, man_sims_box = _get_years_and_sims_box(man_cosine_similarities, interest_word)
@@ -162,6 +162,33 @@ def plot_temporal_changes(woman_cosine_similarities, man_cosine_similarities, in
     plt.title('Temporal Analysis of Gender-%s Relation\n(LIWC Category: %s)'%(interest_word, liwc_category))
     ax.legend([bp1["boxes"][0], bp2["boxes"][0]], ['woman words', 'man words'])
     plt.savefig(results_dir + interest_word + "_temporal_cosine_sim_boxplot.png")
+    plt.close()
+
+    # Make mean-standard error plot
+    all_years = [x for x in range(1300,2050,50)]
+    woman_years_se = []
+    woman_errors_se = []
+    woman_sims_se = []
+    for year, x in zip(all_years, woman_sims_box):
+        if len(x) > 1:
+            woman_sims_se.append(statistics.mean(x))
+            woman_errors_se.append(statistics.stdev(x))
+            woman_years_se.append(year)
+    man_years_se = []
+    man_errors_se = []
+    man_sims_se = []
+    for year, x in zip(all_years, man_sims_box):
+        if len(x) > 1:
+            man_sims_se.append(statistics.mean(x))
+            man_errors_se.append(statistics.stdev(x))
+            man_years_se.append(year)
+    plt.errorbar(woman_years_se, woman_sims_se, yerr=woman_errors_se, fmt='o', label='woman words', color='r', capsize=5)
+    plt.errorbar(man_years_se, man_sims_se, yerr=man_errors_se, fmt='o', label='man words', color='b', capsize=5)
+    plt.xlabel('Approximate Year')
+    plt.ylabel('Cosine Similarity between\nGender word and "%s"'%interest_word)
+    plt.title('Temporal Analysis of Gender-%s Relation\n(LIWC Category: %s)'%(interest_word, liwc_category))
+    plt.legend()
+    plt.savefig(results_dir + interest_word + "_temporal_cosine_sim_errorplot.png")
     plt.close()
 
 def _get_average_similarity(sims, interest_word):
@@ -201,15 +228,15 @@ def plot_static(woman_work, woman_home, woman_achiev, man_work, man_home, man_ac
      achievement_words)
     plt.scatter(man_work_avg, woman_work_avg, color='b', label='work')
     for i, work_word in enumerate(work_words):
-        plt.annotate(work_word, (man_work_avg[i], woman_work_avg[i]))
+        plt.annotate(work_word, (man_work_avg[i], woman_work_avg[i]), fontsize='small')
     plt.scatter(man_home_avg, woman_home_avg, color='g', label='home')
     for i, home_word in enumerate(home_words):
-        plt.annotate(home_word, (man_home_avg[i], woman_home_avg[i]))
+        plt.annotate(home_word, (man_home_avg[i], woman_home_avg[i]), fontsize='small')
     plt.scatter(man_achiev_avg, woman_achiev_avg, color='r', label='achievement')
     for i, achiev_word in enumerate(achievement_words):
-        plt.annotate(achiev_word, (man_achiev_avg[i], woman_achiev_avg[i]))
+        plt.annotate(achiev_word, (man_achiev_avg[i], woman_achiev_avg[i]), fontsize='small')
     plt.axline((0.2, 0.2), (0.3, 0.3), color='black')
-    plt.xlabel('Man Terms\n(man,men,male,he,his,him)')
+    plt.xlabel('Man Terms (man,men,male,he,his,him)')
     plt.ylabel('Woman Terms\n(woman,women,female,she,her,hers)')
     plt.title('Temporally Averaged Cosine Similarities to...')
     plt.legend(title='LIWC category')
