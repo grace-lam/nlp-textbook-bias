@@ -22,6 +22,7 @@ model_bert_pretrained = 'bert-base-uncased'
 model_bert_textbook_dir = 'bert_mlm/80_10_10/bert_mlm_textbook'
 textbook_chronological_dir = 'final_textbook_years/all_textbooks/'
 results_dir = 'temporal_analysis_cosine_results/'
+stats_tests_file = 'stats_tests.txt'
 
 MODEL_OPTION = model_bert_textbook_dir # change this to analyze a different model!
 NUM_ANALYSIS_SENTENCES = -1 # number of sentences to analyze PER time period (change to -1 to do all)
@@ -215,7 +216,7 @@ def _analyze_keyword_similarities(woman_sims, man_sims, keywords):
         woman_averages.append(woman_avg)
         man_averages.append(man_avg)
         t_val, p_val = stats.ttest_ind(woman_cosines, man_cosines)
-        with open(results_dir + "stats_tests.txt", "a") as output:
+        with open(results_dir + stats_tests_file, "a") as output:
             output.write("Man vs woman similarities to the word " + word +
             " have averages %f and %f respectively and t-value %f and p-value %f \n"
             %(man_avg, woman_avg, t_val, p_val))
@@ -236,6 +237,9 @@ def plot_static(woman_work, woman_home, woman_achiev, man_work, man_home, man_ac
     for i, achiev_word in enumerate(achievement_words):
         plt.annotate(achiev_word, (man_achiev_avg[i], woman_achiev_avg[i]), fontsize='small')
     plt.axline((0.2, 0.2), (0.3, 0.3), color='black')
+    plt.xlim(0.25, 0.48)
+    plt.ylim(0.25, 0.48)
+    plt.gca().set_aspect('equal', adjustable='box')
     plt.xlabel('Man Terms (man,men,male,he,his,him)')
     plt.ylabel('Woman Terms\n(woman,women,female,she,her,hers)')
     plt.title('Temporally Averaged Cosine Similarities to...')
@@ -262,6 +266,7 @@ def main():
     start_time = time.perf_counter()
     finetune_bert.gpu_check()
     os.makedirs(results_dir, exist_ok=True)
+    open(results_dir + stats_tests_file, "w") # override existing
     if not LOAD_RESULTS:
         woman_work_cos, man_work_cos, woman_home_cos, man_home_cos, woman_achiev_cos, man_achiev_cos = get_temporal_cosine_similarities()
     else:
