@@ -1,0 +1,33 @@
+Loading cached processed dataset at /home/marygoose/.cache/huggingface/datasets/text/default-c0c119d234c48114/0.0.0/44d63bd03e7e554f16131765a251f2d8333a5fe8a73f6ea3de012dbc49443691/cache-dce9d4311d81c4f5.arrow
+Loading cached processed dataset at /home/marygoose/.cache/huggingface/datasets/text/default-c0c119d234c48114/0.0.0/44d63bd03e7e554f16131765a251f2d8333a5fe8a73f6ea3de012dbc49443691/cache-b3ede8159b0b273f.arrow
+Loading cached processed dataset at /home/marygoose/.cache/huggingface/datasets/text/default-c0c119d234c48114/0.0.0/44d63bd03e7e554f16131765a251f2d8333a5fe8a73f6ea3de012dbc49443691/cache-9f4cfd8aeba60ecc.arrow
+Loading cached processed dataset at /home/marygoose/.cache/huggingface/datasets/text/default-c0c119d234c48114/0.0.0/44d63bd03e7e554f16131765a251f2d8333a5fe8a73f6ea3de012dbc49443691/cache-684d60a45ac02919.arrow
+Loading cached processed dataset at /home/marygoose/.cache/huggingface/datasets/text/default-c0c119d234c48114/0.0.0/44d63bd03e7e554f16131765a251f2d8333a5fe8a73f6ea3de012dbc49443691/cache-48d574fe7154591e.arrow
+Loading cached processed dataset at /home/marygoose/.cache/huggingface/datasets/text/default-c0c119d234c48114/0.0.0/44d63bd03e7e554f16131765a251f2d8333a5fe8a73f6ea3de012dbc49443691/cache-62f0f76789f84852.arrow
+Loading cached processed dataset at /home/marygoose/.cache/huggingface/datasets/text/default-c0c119d234c48114/0.0.0/44d63bd03e7e554f16131765a251f2d8333a5fe8a73f6ea3de012dbc49443691/cache-1b1a8ce83b76a17a.arrow
+Loading cached processed dataset at /home/marygoose/.cache/huggingface/datasets/text/default-c0c119d234c48114/0.0.0/44d63bd03e7e554f16131765a251f2d8333a5fe8a73f6ea3de012dbc49443691/cache-467b45c30b22be30.arrow
+Loading cached processed dataset at /home/marygoose/.cache/huggingface/datasets/text/default-c0c119d234c48114/0.0.0/44d63bd03e7e554f16131765a251f2d8333a5fe8a73f6ea3de012dbc49443691/cache-ccef175507640b1b.arrow
+Loading cached processed dataset at /home/marygoose/.cache/huggingface/datasets/text/default-c0c119d234c48114/0.0.0/44d63bd03e7e554f16131765a251f2d8333a5fe8a73f6ea3de012dbc49443691/cache-09db6dc20d7241d0.arrow
+Some weights of the model checkpoint at bert-base-uncased were not used when initializing BertForMaskedLM: ['cls.seq_relationship.weight', 'cls.seq_relationship.bias']
+- This IS expected if you are initializing BertForMaskedLM from the checkpoint of a model trained on another task or with another architecture (e.g. initializing a BertForSequenceClassification model from a BertForPreTraining model).
+- This IS NOT expected if you are initializing BertForMaskedLM from the checkpoint of a model that you expect to be exactly identical (initializing a BertForSequenceClassification model from a BertForSequenceClassification model).
+{'loss': 2.6134, 'learning_rate': 4.482079966853118e-05, 'epoch': 0.31}
+{'eval_loss': 2.395420551300049, 'eval_runtime': 96.2376, 'eval_samples_per_second': 55.114, 'epoch': 0.31}
+{'loss': 2.4603, 'learning_rate': 3.9641599337062356e-05, 'epoch': 0.62}
+{'eval_loss': 2.3135974407196045, 'eval_runtime': 96.2826, 'eval_samples_per_second': 55.088, 'epoch': 0.62}
+{'loss': 2.3783, 'learning_rate': 3.4462399005593536e-05, 'epoch': 0.93}
+{'eval_loss': 2.241938591003418, 'eval_runtime': 96.2513, 'eval_samples_per_second': 55.106, 'epoch': 0.93}
+{'loss': 2.3069, 'learning_rate': 2.928319867412472e-05, 'epoch': 1.24}
+{'eval_loss': 2.232003927230835, 'eval_runtime': 96.3412, 'eval_samples_per_second': 55.054, 'epoch': 1.24}
+{'loss': 2.2689, 'learning_rate': 2.4103998342655896e-05, 'epoch': 1.55}
+{'eval_loss': 2.1968417167663574, 'eval_runtime': 96.3181, 'eval_samples_per_second': 55.068, 'epoch': 1.55}
+{'loss': 2.2417, 'learning_rate': 1.8924798011187072e-05, 'epoch': 1.86}
+{'eval_loss': 2.160198450088501, 'eval_runtime': 96.2575, 'eval_samples_per_second': 55.102, 'epoch': 1.86}
+{'loss': 2.1843, 'learning_rate': 1.3745597679718252e-05, 'epoch': 2.18}
+{'eval_loss': 2.1344668865203857, 'eval_runtime': 96.2756, 'eval_samples_per_second': 55.092, 'epoch': 2.18}
+{'loss': 2.1671, 'learning_rate': 8.56639734824943e-06, 'epoch': 2.49}
+{'eval_loss': 2.118346691131592, 'eval_runtime': 96.3084, 'eval_samples_per_second': 55.073, 'epoch': 2.49}
+{'loss': 2.1486, 'learning_rate': 3.387197016780609e-06, 'epoch': 2.8}
+{'eval_loss': 2.1130969524383545, 'eval_runtime': 96.3003, 'eval_samples_per_second': 55.078, 'epoch': 2.8}
+{'train_runtime': 8801.3281, 'train_samples_per_second': 0.548, 'epoch': 3.0}
+100%|████████████████████████████████████████████████████████████████████████████████████████████████████████████| 4827/4827 [2:26:41<00:00,  1.82s/it]
