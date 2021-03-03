@@ -1,4 +1,5 @@
 import os
+import math
 import torch
 
 from datasets import load_dataset
@@ -39,7 +40,12 @@ def evaluate_bert(model_checkpoint):
     return loss
 
 pretrained_test_loss = evaluate_bert(pretrained_checkpoint)
+print('Pretrained BERT:')
+print(f"Cross-entropy Loss: {pretrained_test_loss['eval_loss']:.2f}")
+print(f"Perplexity: {math.exp(pretrained_test_loss['eval_loss']):.2f}")
+
 finetuned_test_loss = evaluate_bert(finetuned_checkpoint)
-print(pretrained_test_loss)
-print(finetuned_test_loss)
+print('Finetuned BERT:')
+print(f"Cross-entropy Loss: {finetuned_test_loss['eval_loss']:.2f}")
+print(f"Perplexity: {math.exp(finetuned_test_loss['eval_loss']):.2f}")
 
