@@ -12,8 +12,8 @@ from finetune_bert import *
 
 test_file = 'bert_data/80_10_10/test_textbook_data.txt'
 pretrained_checkpoint = 'bert-base-uncased'
-finetuned_checkpoint = 'bert_mlm/80_10_10/bert_mlm_textbook'
-block_size = 128
+finetuned_checkpoint = 'bert_mlm/block_512/bert_mlm_textbook'
+block_size = 512
 
 def tokenize_function(examples):
     return tokenizer(examples["text"])
