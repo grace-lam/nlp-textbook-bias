@@ -64,8 +64,8 @@ def finetune_bert(lm_datasets, data_collator):
         logging_dir=model_dir+'logs',
         evaluation_strategy='steps',
         eval_steps=500,
-        per_device_train_batch_size=16,
-        per_device_eval_batch_size=32,
+        per_device_train_batch_size=8,
+        per_device_eval_batch_size=16,
         load_best_model_at_end=True,
     )
 
