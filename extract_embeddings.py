@@ -2,29 +2,11 @@
 
 import torch
 
-from transformers import AutoTokenizer
-
 import finetune_bert
+import utilities
 
 model_bert_pretrained = 'bert-base-uncased'
 block_size = 512
-
-def _sentence_to_tokens(sentence):
-    # we always use BERT's tokenizer
-    tokenizer = AutoTokenizer.from_pretrained(model_bert_pretrained)
-    # convert to BERT's tokenizer format
-    marked_sentence = '[CLS] ' + sentence + ' [SEP]'
-    # Tokenize our sentence with the BERT tokenizer.
-    tokenized_text = tokenizer.tokenize(marked_sentence)[:block_size] # truncate
-    # Map the token strings to their vocabulary indeces.
-    indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
-    # Mark each of the tokens as belonging to sentence "1" (to mark everything is
-    # in the same sentence, which is needed to extract from BERT model later!)
-    segments_ids = [1] * len(tokenized_text)
-    # Convert inputs to PyTorch tensors
-    tokens_tensor = torch.tensor([indexed_tokens])
-    segments_tensor = torch.tensor([segments_ids])
-    return tokens_tensor, segments_tensor, tokenized_text
 
 def _build_keyword_embeddings(token_embeddings, tokenized_text, keywords):
     keyword_embeddings = {}
@@ -57,7 +39,7 @@ def _retrieve_token_embeddings(tokens_tensor, segments_tensor, model):
     return token_embeddings
 
 def get_keyword_embeddings(sentence:str, keywords:set, model):
-    tokens_tensor, segments_tensor, tokenized_text = _sentence_to_tokens(sentence)
+    tokens_tensor, segments_tensor, tokenized_text = utilities.sentence_to_tokens(sentence)
     token_embeddings = _retrieve_token_embeddings(tokens_tensor, segments_tensor, model)
     keyword_embeddings = _build_keyword_embeddings(token_embeddings, tokenized_text, keywords)
     return keyword_embeddings
