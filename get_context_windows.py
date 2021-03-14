@@ -93,7 +93,6 @@ def tokenize_sentences(sentences):
             continue
         tokenized_info = (gender_token_index, query_token_index, gender_word, query_word)
         tokenized_sentences.append((tokens_tensor, segments_tensor, tokenized_text, tokenized_info))
-    print(tokenized_sentences)
     return tokenized_sentences
 
 
