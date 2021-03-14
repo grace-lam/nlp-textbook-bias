@@ -2,7 +2,10 @@
 
 import ast
 
+import torch
 from transformers import AutoTokenizer
+
+model_bert_pretrained = 'bert-base-uncased'
 
 def get_keywords(category_word):
     """Returns keywords labeled of a certain LIWC category"""
@@ -26,14 +29,14 @@ def read_dicts_from_paths(paths):
             list_of_dicts.append(data)
     return list_of_dicts
 
-def sentence_to_tokens(sentence):
+def sentence_to_tokens(sentence, max_length=512):
     """Convert sentences to tokens using BERT's Tokenizer"""
     # we always use BERT's tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_bert_pretrained)
     # convert to BERT's tokenizer format
     marked_sentence = '[CLS] ' + sentence + ' [SEP]'
     # Tokenize our sentence with the BERT tokenizer.
-    tokenized_text = tokenizer.tokenize(marked_sentence)[:block_size] # truncate
+    tokenized_text = tokenizer.tokenize(marked_sentence, max_length=max_length, truncation=True)
     # Map the token strings to their vocabulary indeces.
     indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
     # Mark each of the tokens as belonging to sentence "1" (to mark everything is
