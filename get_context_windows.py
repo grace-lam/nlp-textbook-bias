@@ -1,5 +1,11 @@
 """Given a text dataset and interest words, extracts appropriate contexts to input
-into BERT as probes to corresponding files"""
+into BERT as probes. Each gender-query word pair gets its own file for each
+time period. Each such file contains:
+ an array with each entry formatted as
+         (tokens_tensor, segments_tensor, tokenized_sentence,
+         (gender_index, query_index, gender_word, query_word))
+
+"""
 
 import math
 import os
