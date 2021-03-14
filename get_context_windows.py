@@ -13,6 +13,7 @@ text_data_path = 'final_textbook_years/all_textbooks/'
 NUM_TOKENS = 512 # in number of tokens
 MAX_DISTANCE_BETWEEN_KEYWORDS = 100 # in number of words
 CHARS_PER_WORD = 6 # over-estimate number of characters per word (incl space)
+context_window_dir = 'final_textbook_contexts/' + str(NUM_TOKENS) + '_tokens/'
 
 # These keywords follow Lucy and Demszky's set up
 man_words = set(['man', 'men', 'male', 'he', 'his', 'him'])
@@ -86,6 +87,7 @@ def tokenize_sentences(sentences):
             continue
         tokenized_info = (gender_token_index, query_token_index, gender_word, query_word)
         tokenized_sentences.append((tokens_tensor, segments_tensor, tokenized_text, tokenized_info))
+    print(tokenized_sentences)
     return tokenized_sentences
 
 
@@ -94,13 +96,20 @@ def process_categories(gender_category, query_category):
     for gender_word in gender_category:
         for query_word in query_category:
             for text_filename in os.listdir(text_data_path):
+                os.makedirs(context_window_dir + "/" + text_filename, exist_ok=True)
                 text = utilities.eliminate_newlines(text_data_path + text_filename)
                 sentences = extract_sentences(gender_word, query_word, text)
                 tokenized_sentences = tokenize_sentences(sentences)
-                # @TODO: then tokenization from sentences, and output to file
+                with open(context_window_dir + "/" + text_filename + f"/{gender_word}_{query_word}.txt", "w") as output:
+                    output.write(str(tokenized_sentences))
 
 def main():
-    process_categories(man_words, home_words)
+    os.makedirs(context_window_dir, exist_ok=True)
+    query_word_categories = [home_words, work_words, achievement_words]
+    gender_word_categories = [man_words, woman_words]
+    for gender_category in gender_word_categories:
+        for query_category in query_word_categories:
+            process_categories(gender_category, query_category)
 
 if __name__ == '__main__':
     main()
