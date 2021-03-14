@@ -10,8 +10,8 @@ from transformers import Trainer, TrainingArguments
 train_file = 'bert_data/80_10_10/train_textbook_data.txt'
 eval_file = 'bert_data/80_10_10/dev_textbook_data.txt'
 model_checkpoint = 'bert-base-uncased'
-model_dir='bert_mlm/80_10_10/'
-block_size = 128
+model_dir = 'bert_mlm/block_512/'
+block_size = 512
 
 def gpu_check():
     # If there's a GPU available...
@@ -64,8 +64,8 @@ def finetune_bert(lm_datasets, data_collator):
         logging_dir=model_dir+'logs',
         evaluation_strategy='steps',
         eval_steps=500,
-        per_device_train_batch_size=32,
-        per_device_eval_batch_size=64,
+        per_device_train_batch_size=8,
+        per_device_eval_batch_size=16,
         load_best_model_at_end=True,
     )
 
