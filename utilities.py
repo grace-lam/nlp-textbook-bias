@@ -29,6 +29,13 @@ def read_dicts_from_paths(paths):
             list_of_dicts.append(data)
     return list_of_dicts
 
+def read_data(path):
+    """Read in data from path"""
+    with open(path) as f:
+        data = f.read()
+        data = ast.literal_eval(data)
+    return data
+
 def sentence_to_tokens(sentence, max_length=512):
     """Convert sentences to tokens using BERT's Tokenizer"""
     # we always use BERT's tokenizer
