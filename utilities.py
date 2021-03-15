@@ -2,6 +2,7 @@
 
 import ast
 
+import numpy as np
 import torch
 from transformers import AutoTokenizer
 
@@ -30,9 +31,21 @@ def read_dicts_from_paths(paths):
     return list_of_dicts
 
 def read_data(path):
-    """Read in data from path"""
+    """Read data as-is from a path"""
     with open(path) as f:
         data = f.read()
+        data = ast.literal_eval(data)
+    return data
+
+def read_context_windows(path):
+    """Read in data from path, where path is to a file formatted as:
+    an array with each entry formatted as
+            (tokens_tensor, segments_tensor, tokenized_sentence,
+            (gender_index, query_index, gender_word, query_word))
+    """
+    with open(path) as f:
+        data = f.read()
+        data = data.replace("tensor", "")
         data = ast.literal_eval(data)
     return data
 
