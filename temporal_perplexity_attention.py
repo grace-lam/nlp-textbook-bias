@@ -129,7 +129,7 @@ def get_temporal_perplexity_and_attention_values():
     pp[("woman", "achiev")] = {}
     pp[("man", "achiev")] = {}
 
-    # year_ctr = 1
+    year_ctr = 1
 
     for year_dir in os.listdir(os.fsencode(textbook_chronological_dir)):
         dirname = os.fsdecode(year_dir)
@@ -140,17 +140,18 @@ def get_temporal_perplexity_and_attention_values():
                 if filename.endswith(".txt"):
                     keywords = filename[:-4] # get rid of extension
                     gender_word, query_word = keywords.split("_")
-                    if query_word == 'industry':
-                        gender_category = _get_category(gender_word)
-                        query_category = _get_category(query_word)
-                        if year not in pp[(gender_category, query_category)]:
-                            pp[(gender_category, query_category)][year] = {}
-                        data = utilities.read_context_windows(textbook_chronological_dir + dirname + "/" + filename)
-                        for context in data:
-                            _add_perplexity_values(context, pp[(gender_category, query_category)][year], False)
-            # if year_ctr == 2:
-            #     break
-            # year_ctr += 1
+                    gender_category = _get_category(gender_word)
+                    query_category = _get_category(query_word)
+                    if year not in pp[(gender_category, query_category)]:
+                        pp[(gender_category, query_category)][year] = {}
+                    data = utilities.read_context_windows(textbook_chronological_dir + dirname + "/" + filename)
+                    for context in data:
+                        _add_perplexity_values(context, pp[(gender_category, query_category)][year], False)
+            
+            if year_ctr == 2:
+                break
+            year_ctr += 1
+    
     with open(results_pp_path, "w") as output:
         output.write(str(pp))
     return pp
@@ -169,6 +170,7 @@ def _get_years_and_probs_and_acc(pp_year, interest_word):
                 for (norm_prob, correctness) in pp_dict[words]:
                     probs_yr.append(norm_prob)
                     corr_yr.append(correctness)
+        years.append(year)
         probs.append(probs_yr)
         corr.append(corr_yr)
 
@@ -185,7 +187,7 @@ def plot_temporal_preds(woman_pp, man_pp, interest_word, liwc_category):
 
     # Make accuracy line plots
     woman_years = np.array(list(map(int,woman_years)))
-    man_years = np.array(list(map(int,woman_years)))
+    man_years = np.array(list(map(int,man_years)))
     woman_years_acc = []
     woman_acc = []
     for year, x in zip(woman_years, woman_corr):
