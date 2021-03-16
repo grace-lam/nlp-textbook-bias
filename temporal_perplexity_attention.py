@@ -54,7 +54,7 @@ sep_token, sep_id = tokenizer.sep_token, tokenizer.sep_token_id
 # Save interesting examples for attention maps in format: [(tokens_tensor, segments_tensor, tokenized_text, tokenized_info, norm_prob)]
 attn_pr_25 = []
 attn_pr_45_55 = []
-attn_pr_999 = []
+attn_pr_9999 = []
 
 def _get_attn_and_mask_probs(inputs, masked_position):
     # Forward
@@ -74,49 +74,50 @@ def _add_perplexity_values(context, pp_year, direct_comp=True):
     segments_tensor = torch.tensor(segments_tensor)
     gender_index, query_index, gender_word, query_word = sentence_info
 
-    # Mask the target gender word
-    inputs = tokens_tensor
-    inputs[0][gender_index] = mask_id
-    masked_position = gender_index
+    if len(tokenized_text) == num_context_tokens:
+        # Mask the target gender word
+        inputs = tokens_tensor
+        inputs[0][gender_index] = mask_id
+        masked_position = gender_index
 
-    probs, attention = _get_attn_and_mask_probs(inputs, masked_position)
+        probs, attention = _get_attn_and_mask_probs(inputs, masked_position)
 
-    if direct_comp:
-        # Get probability of token <pronoun>
-        pronoun_id = tokenizer.convert_tokens_to_ids(gender_word)
-        pronoun_prob = probs[pronoun_id].item()
-        # Get probability of token <opposite_pronoun>
-        opp_pronoun = pronoun_oppos[gender_word]
-        opp_pronoun_id = tokenizer.convert_tokens_to_ids(opp_pronoun)
-        opp_pronoun_prob = probs[opp_pronoun_id].item()
-        gender_prob = pronoun_prob
-        opp_gender_prob = opp_pronoun_prob
-    else:
-        man_prob = 0
-        woman_prob = 0
-        for m_word in man_words_set:
-            pronoun_id = tokenizer.convert_tokens_to_ids(m_word)
-            man_prob += probs[pronoun_id].item()
-        for w_word in woman_words_set:
-            pronoun_id = tokenizer.convert_tokens_to_ids(w_word)
-            woman_prob += probs[pronoun_id].item()
-        gender_prob = man_prob if gender_word in man_words_set else woman_prob
-        opp_gender_prob = woman_prob if gender_word in man_words_set else man_prob
+        if direct_comp:
+            # Get probability of token <pronoun>
+            pronoun_id = tokenizer.convert_tokens_to_ids(gender_word)
+            pronoun_prob = probs[pronoun_id].item()
+            # Get probability of token <opposite_pronoun>
+            opp_pronoun = pronoun_oppos[gender_word]
+            opp_pronoun_id = tokenizer.convert_tokens_to_ids(opp_pronoun)
+            opp_pronoun_prob = probs[opp_pronoun_id].item()
+            gender_prob = pronoun_prob
+            opp_gender_prob = opp_pronoun_prob
+        else:
+            man_prob = 0
+            woman_prob = 0
+            for m_word in man_words_set:
+                pronoun_id = tokenizer.convert_tokens_to_ids(m_word)
+                man_prob += probs[pronoun_id].item()
+            for w_word in woman_words_set:
+                pronoun_id = tokenizer.convert_tokens_to_ids(w_word)
+                woman_prob += probs[pronoun_id].item()
+            gender_prob = man_prob if gender_word in man_words_set else woman_prob
+            opp_gender_prob = woman_prob if gender_word in man_words_set else man_prob
 
-    norm_prob = gender_prob / (gender_prob + opp_gender_prob)
-    correctness = 1 if norm_prob > 0.5 else 0
+        norm_prob = gender_prob / (gender_prob + opp_gender_prob)
+        correctness = 1 if norm_prob > 0.5 else 0
 
-    if (gender_word, query_word) not in pp_year:
-        pp_year[(gender_word, query_word)] = []
-    pp_year[(gender_word, query_word)].append((norm_prob, correctness))
+        if (gender_word, query_word) not in pp_year:
+            pp_year[(gender_word, query_word)] = []
+        pp_year[(gender_word, query_word)].append((norm_prob, correctness))
 
-    # Add interesting contexts for attention analysis
-    if norm_prob < 0.25: # high confidence, incorrect prediction
-        attn_pr_25.append((tokens_tensor, segments_tensor, tokenized_text, sentence_info, norm_prob))
-    elif norm_prob > 0.45 and norm_prob < 0.55: # low confidence
-        attn_pr_45_55.append((tokens_tensor, segments_tensor, tokenized_text, sentence_info, norm_prob))
-    elif norm_prob > 0.999: # high confidence, correct prediction
-        attn_pr_999.append((tokens_tensor, segments_tensor, tokenized_text, sentence_info, norm_prob))
+        # Add interesting contexts for attention analysis
+        if norm_prob < 0.25: # high confidence, incorrect prediction
+            attn_pr_25.append((tokens_tensor, segments_tensor, tokenized_text, sentence_info, norm_prob))
+        elif norm_prob > 0.45 and norm_prob < 0.55: # low confidence
+            attn_pr_45_55.append((tokens_tensor, segments_tensor, tokenized_text, sentence_info, norm_prob))
+        elif norm_prob > 0.9999: # high confidence, correct prediction
+            attn_pr_9999.append((tokens_tensor, segments_tensor, tokenized_text, sentence_info, norm_prob))
 
 def get_temporal_perplexity_and_attention_values():
     # Each entry of pp is a dictionary formatted as: {year:{(gender_word, query_word): [(norm_prob, correctness)]}}
@@ -252,8 +253,8 @@ def main():
         output.write(str(attn_pr_25))
     with open(results_attn_dir + "pr_0.45_0.55.txt", "w") as output:
         output.write(str(attn_pr_45_55))
-    with open(results_attn_dir + "pr_0.999.txt", "w") as output:
-        output.write(str(attn_pr_999))
+    with open(results_attn_dir + "pr_0.9999.txt", "w") as output:
+        output.write(str(attn_pr_9999))
 
     end_time = time.perf_counter()
     print(f"This took {(end_time - start_time)/60:0.4f} minutes")
