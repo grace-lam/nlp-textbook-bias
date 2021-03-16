@@ -140,8 +140,7 @@ def get_temporal_perplexity_and_attention_values():
                 if filename.endswith(".txt"):
                     keywords = filename[:-4] # get rid of extension
                     gender_word, query_word = keywords.split("_")
-
-                    if query_word == 'work':
+                    if query_word == 'industry':
                         gender_category = _get_category(gender_word)
                         query_category = _get_category(query_word)
                         if year not in pp[(gender_category, query_category)]:
@@ -185,8 +184,6 @@ def plot_temporal_preds(woman_pp, man_pp, interest_word, liwc_category):
         return
 
     # Make accuracy line plots
-    fig, ax = plt.subplots()
-    ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     woman_years = np.array(list(map(int,woman_years)))
     man_years = np.array(list(map(int,woman_years)))
     woman_years_acc = []
@@ -201,18 +198,19 @@ def plot_temporal_preds(woman_pp, man_pp, interest_word, liwc_category):
         if len(x) >= 1:
             man_years_acc.append(year)
             man_acc.append(statistics.mean(x))
-    plt.plot(woman_years_acc, woman_acc, color='r', label='woman words', marker="*")
-    plt.plot(man_years_acc, man_acc, color='b', label='man words', marker="o")
-    plt.xlabel('Approximate Year')
-    plt.ylabel('Gender-Prediction Accuracy\nusing context with "%s"'%interest_word)
-    plt.title('Temporal Analysis of MLM Gender-Prediction Accuracy\n(Word: %s, LIWC Category: %s)'%(interest_word, liwc_category))
-    plt.legend()
-    plt.savefig(results_pp_dir + interest_word + "_temporal_acc_plot.png")
-    plt.close()
+    if woman_years_acc or man_years_acc:
+        fig, ax = plt.subplots()
+        ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+        plt.plot(woman_years_acc, woman_acc, color='r', label='woman words', marker="*")
+        plt.plot(man_years_acc, man_acc, color='b', label='man words', marker="o")
+        plt.xlabel('Approximate Year')
+        plt.ylabel('Gender-Prediction Accuracy\nusing context with "%s"'%interest_word)
+        plt.title('Temporal Analysis of MLM Gender-Prediction Accuracy\n(Word: %s, LIWC Category: %s)'%(interest_word, liwc_category))
+        plt.legend()
+        plt.savefig(results_pp_dir + interest_word + "_temporal_acc_plot.png")
+        plt.close()
 
     # Make normalized prob mean-standard error plot
-    fig, ax = plt.subplots()
-    ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     woman_years_se = []
     woman_errors_se = []
     woman_pr_se = []
@@ -229,14 +227,17 @@ def plot_temporal_preds(woman_pp, man_pp, interest_word, liwc_category):
             man_pr_se.append(statistics.mean(x))
             man_errors_se.append(statistics.stdev(x))
             man_years_se.append(year)
-    plt.errorbar(woman_years_se, woman_pr_se, yerr=woman_errors_se, fmt='o', label='woman words', color='r', capsize=5)
-    plt.errorbar(man_years_se, man_pr_se, yerr=man_errors_se, fmt='o', label='man words', color='b', capsize=5)
-    plt.xlabel('Approximate Year')
-    plt.ylabel('Normalized Prediction Probability between genders\nusing context with "%s"'%interest_word)
-    plt.title('Temporal Analysis of MLM Gender-Prediction Probability\n(Word: %s, LIWC Category: %s)'%(interest_word, liwc_category))
-    plt.legend()
-    plt.savefig(results_pp_dir + interest_word + "_temporal_prob_plot.png")
-    plt.close()
+    if woman_years_se or man_years_se:
+        fig, ax = plt.subplots()
+        ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+        plt.errorbar(woman_years_se, woman_pr_se, yerr=woman_errors_se, fmt='o', label='woman words', color='r', capsize=5)
+        plt.errorbar(man_years_se, man_pr_se, yerr=man_errors_se, fmt='o', label='man words', color='b', capsize=5)
+        plt.xlabel('Approximate Year')
+        plt.ylabel('Normalized Prediction Probability between genders\nusing context with "%s"'%interest_word)
+        plt.title('Temporal Analysis of MLM Gender-Prediction Probability\n(Word: %s, LIWC Category: %s)'%(interest_word, liwc_category))
+        plt.legend()
+        plt.savefig(results_pp_dir + interest_word + "_temporal_prob_plot.png")
+        plt.close()
 
 def generate_plots(pp):
     for work_word in work_words:
