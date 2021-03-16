@@ -10,16 +10,18 @@ time period. Each such file contains:
 import math
 import os
 import re
+import time
 
 import numpy as np
 
+import finetune_bert
 import utilities
 
 text_data_path = 'final_textbook_years/all_textbooks/'
-NUM_TOKENS = 512 # in number of tokens
-MAX_DISTANCE_BETWEEN_KEYWORDS = 100 # in number of words
+NUM_TOKENS = 128 # in number of tokens
+MAX_DISTANCE_BETWEEN_KEYWORDS = 20 # in number of words
 CHARS_PER_WORD = 6 # over-estimate number of characters per word (incl space)
-context_window_dir = 'final_textbook_contexts/' + str(NUM_TOKENS) + '_tokens/'
+context_window_dir = 'final_textbook_contexts/block_' + str(NUM_TOKENS) + '/'
 
 # These keywords follow Lucy and Demszky's set up
 man_words = set(['man', 'men', 'male', 'he', 'his', 'him'])
@@ -109,12 +111,16 @@ def process_categories(gender_category, query_category):
                     output.write(str(tokenized_sentences))
 
 def main():
+    start_time = time.perf_counter()
+    finetune_bert.gpu_check()
     os.makedirs(context_window_dir, exist_ok=True)
     query_word_categories = [home_words, work_words, achievement_words]
     gender_word_categories = [man_words, woman_words]
     for gender_category in gender_word_categories:
         for query_category in query_word_categories:
             process_categories(gender_category, query_category)
+    end_time = time.perf_counter()
+    print(f"This took {(end_time - start_time)/60:0.4f} minutes")
 
 if __name__ == '__main__':
     main()

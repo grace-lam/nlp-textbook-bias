@@ -20,10 +20,11 @@ import extract_embeddings_v1
 import finetune_bert
 import utilities
 
+context_size = 'block_128'
 model_bert_pretrained = 'bert-base-uncased'
-model_bert_textbook_dir = 'bert_mlm/block_512/bert_mlm_textbook'
-textbook_chronological_dir = 'final_textbook_contexts/512_tokens/'
-results_dir = 'temporal_analysis_cosine_results_v1/'
+model_bert_textbook_dir = 'bert_mlm/' + context_size + '/bert_mlm_textbook'
+textbook_chronological_dir = 'final_textbook_contexts/' + context_size + '/'
+results_dir = 'temporal_analysis_cosine_results_' + context_size + '/'
 stats_tests_file = 'stats_tests.txt'
 
 MODEL_OPTION = model_bert_textbook_dir # change this to analyze a different model!
@@ -259,6 +260,7 @@ def make_all_plots(all_cos):
 
 
 def main():
+    # print(utilities.count_words_per_line("final_textbook_years/all_textbooks/1700.txt"))
     start_time = time.perf_counter()
     finetune_bert.gpu_check()
     os.makedirs(results_dir, exist_ok=True)
