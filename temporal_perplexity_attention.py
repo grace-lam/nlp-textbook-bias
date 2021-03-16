@@ -129,7 +129,7 @@ def get_temporal_perplexity_and_attention_values():
     pp[("woman", "achiev")] = {}
     pp[("man", "achiev")] = {}
 
-    year_ctr = 1
+    # year_ctr = 1
 
     for year_dir in os.listdir(os.fsencode(textbook_chronological_dir)):
         dirname = os.fsdecode(year_dir)
@@ -147,9 +147,9 @@ def get_temporal_perplexity_and_attention_values():
                     data = utilities.read_context_windows(textbook_chronological_dir + dirname + "/" + filename)
                     for context in data:
                         _add_perplexity_values(context, pp[(gender_category, query_category)][year], False)
-            if year_ctr == 2:
-                break
-            year_ctr += 1
+            # if year_ctr == 2:
+            #     break
+            # year_ctr += 1
     with open(results_pp_path, "w") as output:
         output.write(str(pp))
     return pp
