@@ -147,7 +147,7 @@ def get_temporal_perplexity_and_attention_values():
                     data = utilities.read_context_windows(textbook_chronological_dir + dirname + "/" + filename)
                     for context in data:
                         _add_perplexity_values(context, pp[(gender_category, query_category)][year], False)
-            if year_ctr == 2:
+            if year_ctr == 1:
                 break
             year_ctr += 1
     with open(results_pp_path, "w") as output:
