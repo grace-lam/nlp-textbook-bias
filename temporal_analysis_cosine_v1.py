@@ -26,11 +26,11 @@ config = context_size + max_dist
 model_bert_pretrained = 'bert-base-uncased'
 model_bert_textbook_dir = 'bert_mlm/' + context_size + '/bert_mlm_textbook'
 textbook_chronological_dir = 'final_textbook_contexts/' + config + '/'
-results_dir = 'temporal_analysis_cosine_results_' + config + '/'
 stats_tests_file = 'stats_tests.txt'
 
-MODEL_OPTION = model_bert_textbook_dir # change this to analyze a different model!
-LOAD_RESULTS = False # change this to False to rerun embedding extraction and get new results (will override folder!)
+MODEL_OPTION = model_bert_pretrained # change this to analyze a different model!
+LOAD_RESULTS = True # change this to False to rerun embedding extraction and get new results (will override folder!)
+results_dir = 'temporal_analysis_cosine_results_' + MODEL_OPTION + config + '/'
 results_path = results_dir + "all_results.txt"
 
 # These keywords follow Lucy and Demszky's set up
