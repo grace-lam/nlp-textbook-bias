@@ -1,6 +1,7 @@
 """Retrieve embeddings from BERT model for analysis"""
 
 import torch
+from transformers import AutoTokenizer
 
 import finetune_bert
 import utilities
