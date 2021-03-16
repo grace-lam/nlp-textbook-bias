@@ -73,3 +73,10 @@ def eliminate_newlines(path):
         data = f.read()
         data = data.replace("\n", " ")
     return data
+
+def count_words_per_line(path):
+    num_words = []
+    with open(path, 'r') as reader:
+        for sentence in reader:
+            num_words.append(len(sentence.split()))
+    return sum(num_words)/len(num_words)
