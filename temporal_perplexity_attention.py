@@ -201,8 +201,8 @@ def plot_temporal_preds(woman_pp, man_pp, interest_word, liwc_category):
         if len(x) >= 1:
             man_years_acc.append(year)
             man_acc.append(statistics.mean(x))
-    plt.plot(woman_years, woman_acc, color='r', label='woman words', marker="*")
-    plt.plot(man_years, man_acc, color='b', label='man words', marker="o")
+    plt.plot(woman_years_acc, woman_acc, color='r', label='woman words', marker="*")
+    plt.plot(man_years_acc, man_acc, color='b', label='man words', marker="o")
     plt.xlabel('Approximate Year')
     plt.ylabel('Gender-Prediction Accuracy\nusing context with "%s"'%interest_word)
     plt.title('Temporal Analysis of MLM Gender-Prediction Accuracy\n(Word: %s, LIWC Category: %s)'%(interest_word, liwc_category))
