@@ -21,17 +21,19 @@ import finetune_bert
 import utilities
 
 context_size = 'block_128'
+max_dist = 'maxdist_50'
+config = context_size + max_dist
 model_bert_pretrained = 'bert-base-uncased'
 model_bert_textbook_dir = 'bert_mlm/' + context_size + '/bert_mlm_textbook'
-textbook_chronological_dir = 'final_textbook_contexts/' + context_size + '/'
-results_dir = 'temporal_analysis_cosine_results_' + context_size + '/'
+textbook_chronological_dir = 'final_textbook_contexts/' + config + '/'
 stats_tests_file = 'stats_tests.txt'
 
-MODEL_OPTION = model_bert_textbook_dir # change this to analyze a different model!
-LOAD_RESULTS = False # change this to False to rerun embedding extraction and get new results (will override folder!)
+MODEL_OPTION = model_bert_pretrained # change this to analyze a different model!
+LOAD_RESULTS = True # change this to False to rerun embedding extraction and get new results (will override folder!)
+results_dir = 'temporal_analysis_cosine_results_' + MODEL_OPTION + config + '/'
 results_path = results_dir + "all_results.txt"
 
-# These keywords follow Lucy and Desmzky's set up
+# These keywords follow Lucy and Demszky's set up
 man_words = set(['man', 'men', 'male', 'he', 'his', 'him'])
 woman_words = set(['woman', 'women', 'female', 'she', 'her', 'hers'])
 home_words = set(['home', 'domestic', 'household', 'chores', 'family'])

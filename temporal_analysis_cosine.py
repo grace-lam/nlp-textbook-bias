@@ -21,12 +21,12 @@ import utilities
 model_bert_pretrained = 'bert-base-uncased'
 model_bert_textbook_dir = 'bert_mlm/80_10_10/bert_mlm_textbook'
 textbook_chronological_dir = 'final_textbook_years/all_textbooks/'
-results_dir = 'temporal_analysis_cosine_results/'
+results_dir = 'temporal_analysis_cosine_results_sentence_pretrained/'
 stats_tests_file = 'stats_tests.txt'
 
-MODEL_OPTION = model_bert_textbook_dir # change this to analyze a different model!
+MODEL_OPTION = model_bert_pretrained # change this to analyze a different model!
 NUM_ANALYSIS_SENTENCES = -1 # number of sentences to analyze PER time period (change to -1 to do all)
-LOAD_RESULTS = True # change this to False to rerun embedding extraction and get new results (will override folder!)
+LOAD_RESULTS = False # change this to False to rerun embedding extraction and get new results (will override folder!)
 
 # These keywords follow Lucy and Desmzky's set up
 man_words = set(['man', 'men', 'male', 'he', 'his', 'him'])
