@@ -157,35 +157,31 @@ def get_temporal_perplexity_and_attention_values():
     return pp
 
 def _get_years_and_probs_and_acc(pp_year, interest_word):
-    years = []
-    probs = [] # one list per year
-    year_to_correctness = {}
-    acc = []
+    years = [] # one year per time period, can correspond to empty probs/corr
+    probs = [] # one list per year, can be empty list
+    corr = [] # one list per year, can be empty list
 
     for year in sorted(pp_year.keys()):
         pp_dict = pp_year[year]
-        probs_yr = []
+        probs_yr, corr_yr = [], []
         for words in pp_dict:
             gender_word, query_word = words
             if query_word == interest_word:
                 for (norm_prob, correctness) in pp_dict[words]:
                     probs_yr.append(norm_prob)
-                    if year not in year_to_correctness:
-                        year_to_correctness[year] = []
-                    year_to_correctness[year].append(correctness)
+                    corr_yr.append(correctness)
         probs.append(probs_yr)
+        corr.append(corr_yr)
 
-    for year in sorted(year_to_correctness.keys()):
-        corr_arr = year_to_correctness[year]
-        years.append(year)
-        acc.append(np.mean(corr_arr))
+    if len(years) != len(probs) or len(years) != len(corr):
+        print('error (lengths of plot input don\'t match):', len(years), len(probs), len(corr))
                         
-    return years, probs, acc
+    return years, probs, corr
 
 def plot_temporal_preds(woman_pp, man_pp, interest_word, liwc_category):
-    woman_years, woman_probs, woman_acc = _get_years_and_probs_and_acc(woman_pp, interest_word)
-    man_years, man_probs, man_acc = _get_years_and_probs_and_acc(man_pp, interest_word)
-    if not woman_years or not man_years:
+    woman_years, woman_probs, woman_corr = _get_years_and_probs_and_acc(woman_pp, interest_word)
+    man_years, man_probs, man_corr = _get_years_and_probs_and_acc(man_pp, interest_word)
+    if not woman_years or not man_years: # empty years list
         return
 
     # Make accuracy line plots
@@ -193,6 +189,18 @@ def plot_temporal_preds(woman_pp, man_pp, interest_word, liwc_category):
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     woman_years = np.array(list(map(int,woman_years)))
     man_years = np.array(list(map(int,woman_years)))
+    woman_years_acc = []
+    woman_acc = []
+    for year, x in zip(woman_years, woman_corr):
+        if len(x) >= 1:
+            woman_years_acc.append(year)
+            woman_acc.append(statistics.mean(x))
+    man_years_acc = []
+    man_acc = []
+    for year, x in zip(man_years, man_corr):
+        if len(x) >= 1:
+            man_years_acc.append(year)
+            man_acc.append(statistics.mean(x))
     plt.plot(woman_years, woman_acc, color='r', label='woman words', marker="*")
     plt.plot(man_years, man_acc, color='b', label='man words', marker="o")
     plt.xlabel('Approximate Year')
