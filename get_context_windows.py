@@ -19,9 +19,9 @@ import utilities
 
 text_data_path = 'final_textbook_years/all_textbooks/'
 NUM_TOKENS = 128 # in number of tokens
-MAX_DISTANCE_BETWEEN_KEYWORDS = 20 # in number of words
+MAX_DISTANCE_BETWEEN_KEYWORDS = 50 # in number of words
 CHARS_PER_WORD = 6 # over-estimate number of characters per word (incl space)
-context_window_dir = 'final_textbook_contexts/block_' + str(NUM_TOKENS) + '/'
+context_window_dir = 'final_textbook_contexts/block_' + str(NUM_TOKENS) + 'maxdist_' + str(MAX_DISTANCE_BETWEEN_KEYWORDS) + '/'
 
 # These keywords follow Lucy and Demszky's set up
 man_words = set(['man', 'men', 'male', 'he', 'his', 'him'])
@@ -107,8 +107,9 @@ def process_categories(gender_category, query_category):
                 text = utilities.eliminate_newlines(text_data_path + text_filename)
                 sentences = extract_sentences(gender_word, query_word, text)
                 tokenized_sentences = tokenize_sentences(sentences)
-                with open(context_window_dir + "/" + text_filename + f"/{gender_word}_{query_word}.txt", "w") as output:
-                    output.write(str(tokenized_sentences))
+                if len(tokenized_sentences) > 0:
+                    with open(context_window_dir + "/" + text_filename + f"/{gender_word}_{query_word}.txt", "w") as output:
+                        output.write(str(tokenized_sentences))
 
 def main():
     start_time = time.perf_counter()
