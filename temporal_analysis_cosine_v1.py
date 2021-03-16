@@ -22,7 +22,7 @@ import utilities
 
 context_size = 'block_128'
 max_dist = 'maxdist_50'
-config = context_size + '/' + max_dist
+config = context_size + max_dist
 model_bert_pretrained = 'bert-base-uncased'
 model_bert_textbook_dir = 'bert_mlm/' + context_size + '/bert_mlm_textbook'
 textbook_chronological_dir = 'final_textbook_contexts/' + config + '/'

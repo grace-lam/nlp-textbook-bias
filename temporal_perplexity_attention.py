@@ -1,4 +1,6 @@
 """Perplexity and attention analysis"""
+import os
+import time
 import statistics
 
 import torch
@@ -7,7 +9,7 @@ from transformers import AutoTokenizer
 from transformers import AutoModelForMaskedLM
 
 import utilities
-from temporal_analysis_cosine_v1 import *
+from temporal_analysis_cosine_v1 import _get_category
 from finetune_bert import gpu_check
 
 home_words = set(['home', 'domestic', 'household', 'chores', 'family'])
@@ -15,7 +17,7 @@ work_words = set(['work', 'labor', 'workers', 'economy', 'trade', 'business', 'j
 achievement_words = set(['power', 'authority', 'achievement', 'control', 'won', 'powerful', 'success', 'better', 'efforts', 'plan', 'tried', 'leader'])
 
 # Create mapping from pronoun to opposite pronoun
-man_words = ['man', 'men', 'male', 'he', 'his', 'him']
+man_words = ['man', 'men', 'male', 'he', 'him', 'his']
 woman_words = ['woman', 'women', 'female', 'she', 'her', 'hers']
 man_words_set = set(man_words)
 woman_words_set = set(woman_words)
@@ -47,7 +49,7 @@ mask_token, mask_id = tokenizer.mask_token, tokenizer.mask_token_id
 cls_token, cls_id = tokenizer.cls_token, tokenizer.cls_token_id
 sep_token, sep_id = tokenizer.sep_token, tokenizer.sep_token_id
 
-def _get_attn_and_mask_probs(inputs):
+def _get_attn_and_mask_probs(inputs, masked_position):
     # Forward
     outputs = model(inputs)
     attention = outputs.attentions  # Output includes attention weights when output_attentions=True
@@ -60,7 +62,7 @@ def _get_attn_and_mask_probs(inputs):
 
 def _add_perplexity_values(context, pp_year, direct_comp=True):
     # Parse txt file into tensors and relevant info
-    tokens_tensor, segments_tensor, tokenized_text, sentence_info = sentence_data
+    tokens_tensor, segments_tensor, tokenized_text, sentence_info = context
     tokens_tensor = torch.tensor(tokens_tensor)
     segments_tensor = torch.tensor(segments_tensor)
     gender_index, query_index, gender_word, query_word = sentence_info
@@ -70,7 +72,7 @@ def _add_perplexity_values(context, pp_year, direct_comp=True):
     inputs[0][gender_index] = mask_id
     masked_position = gender_index
 
-    probs, attention = _get_attn_and_mask_probs(inputs)
+    probs, attention = _get_attn_and_mask_probs(inputs, masked_position)
 
     if direct_comp:
         # Get probability of token <pronoun>
@@ -111,21 +113,22 @@ def get_temporal_perplexity_and_attention_values():
     pp[("man", "achiev")] = {}
     # Each entry of pp is a dictionary formatted as: {year:{(gender_word, query_word): [(norm_prob, correctness)]}}
     for year_dir in os.listdir(os.fsencode(textbook_chronological_dir)):
-         dirname = os.fsdecode(year_dir)
-         if dirname.endswith(".txt"): # currently directories have .txt extension
-             year = dirname[:-4] # get rid of extension
-             for file in os.listdir(textbook_chronological_dir + dirname + "/"):
-                 filename = os.fsdecode(file)
-                 if filename.endswith(".txt"):
-                     keywords = filename[:-4] # get rid of extension
-                     gender_word, query_word = keywords.split("_")
-                     gender_category = _get_category(gender_word)
-                     query_category = _get_category(query_word)
-                     if year not in pp[(gender_category, query_category)]:
-                         pp[(gender_category, query_category)][year] = {}
-                     data = utilities.read_context_windows(textbook_chronological_dir + dirname + "/" + filename)
-                     for context in data:
-                         _add_perplexity_values(context, pp[(gender_category, query_category)][year])
+        dirname = os.fsdecode(year_dir)
+        if dirname.endswith(".txt"): # currently directories have .txt extension
+            year = dirname[:-4] # get rid of extension
+            for file in os.listdir(textbook_chronological_dir + dirname + "/"):
+                filename = os.fsdecode(file)
+                if filename.endswith(".txt"):
+                    keywords = filename[:-4] # get rid of extension
+                    gender_word, query_word = keywords.split("_")
+                    gender_category = _get_category(gender_word)
+                    query_category = _get_category(query_word)
+                    if year not in pp[(gender_category, query_category)]:
+                        pp[(gender_category, query_category)][year] = {}
+                    data = utilities.read_context_windows(textbook_chronological_dir + dirname + "/" + filename)
+                    for context in data:
+                        _add_perplexity_values(context, pp[(gender_category, query_category)][year])
+            # break
     with open(results_pp_path, "w") as output:
         output.write(str(pp))
     return pp
@@ -151,7 +154,7 @@ def _get_years_and_probs_and_acc(pp_year, interest_word):
                 break
 
     for year in sorted(year_to_correctness.keys()):
-        corr_arr = year_to_correctness[year]:
+        corr_arr = year_to_correctness[year]
         years.append(year)
         acc.append(np.mean(corr_arr))
                         
@@ -214,8 +217,8 @@ def generate_plots(pp):
 
 def main():
     start_time = time.perf_counter()
-    finetune_bert.gpu_check()
-    os.makedirs(results_dir, exist_ok=True)
+    gpu_check()
+    os.makedirs(results_pp_dir, exist_ok=True)
     pp = get_temporal_perplexity_and_attention_values()
     generate_plots(pp)
     end_time = time.perf_counter()
