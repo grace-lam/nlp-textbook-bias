@@ -140,13 +140,15 @@ def get_temporal_perplexity_and_attention_values():
                 if filename.endswith(".txt"):
                     keywords = filename[:-4] # get rid of extension
                     gender_word, query_word = keywords.split("_")
-                    gender_category = _get_category(gender_word)
-                    query_category = _get_category(query_word)
-                    if year not in pp[(gender_category, query_category)]:
-                        pp[(gender_category, query_category)][year] = {}
-                    data = utilities.read_context_windows(textbook_chronological_dir + dirname + "/" + filename)
-                    for context in data:
-                        _add_perplexity_values(context, pp[(gender_category, query_category)][year], False)
+
+                    if query_word == 'work':
+                        gender_category = _get_category(gender_word)
+                        query_category = _get_category(query_word)
+                        if year not in pp[(gender_category, query_category)]:
+                            pp[(gender_category, query_category)][year] = {}
+                        data = utilities.read_context_windows(textbook_chronological_dir + dirname + "/" + filename)
+                        for context in data:
+                            _add_perplexity_values(context, pp[(gender_category, query_category)][year], False)
             # if year_ctr == 2:
             #     break
             # year_ctr += 1
@@ -186,13 +188,13 @@ def plot_temporal_preds(woman_pp, man_pp, interest_word, liwc_category):
     if not woman_years or not man_years:
         return
 
-    # Make accuracy scatter plots
+    # Make accuracy line plots
     fig, ax = plt.subplots()
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     woman_years = np.array(list(map(int,woman_years)))
     man_years = np.array(list(map(int,woman_years)))
-    plt.scatter(woman_years, woman_acc, color='r', label='woman words', marker="*")
-    plt.scatter(man_years, man_acc, color='b', label='man words', marker="o")
+    plt.plot(woman_years, woman_acc, color='r', label='woman words', marker="*")
+    plt.plot(man_years, man_acc, color='b', label='man words', marker="o")
     plt.xlabel('Approximate Year')
     plt.ylabel('Gender-Prediction Accuracy\nusing context with "%s"'%interest_word)
     plt.title('Temporal Analysis of MLM Gender-Prediction Accuracy\n(Word: %s, LIWC Category: %s)'%(interest_word, liwc_category))
