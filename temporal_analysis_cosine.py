@@ -26,7 +26,7 @@ stats_tests_file = 'stats_tests.txt'
 
 MODEL_OPTION = model_bert_pretrained # change this to analyze a different model!
 NUM_ANALYSIS_SENTENCES = -1 # number of sentences to analyze PER time period (change to -1 to do all)
-LOAD_RESULTS = True # change this to False to rerun embedding extraction and get new results (will override folder!)
+LOAD_RESULTS = False # change this to False to rerun embedding extraction and get new results (will override folder!)
 
 # These keywords follow Lucy and Desmzky's set up
 man_words = set(['man', 'men', 'male', 'he', 'his', 'him'])
