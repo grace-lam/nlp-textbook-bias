@@ -5,6 +5,8 @@ import statistics
 
 import torch
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.ticker import FormatStrFormatter
 from transformers import AutoTokenizer
 from transformers import AutoModelForMaskedLM
 
@@ -27,13 +29,13 @@ for i, man_word in enumerate(man_words):
     pronoun_oppos[woman_words[i]] = man_word
 
 # Directories
+num_context_tokens = 128
 model_bert_pretrained = 'bert-base-uncased'
-model_bert_textbook_dir = 'bert_mlm/block_512/bert_mlm_textbook'
-textbook_chronological_dir = 'final_textbook_contexts/512_tokens/'
-results_pp_dir = 'temporal_pp_results/'
-results_attn_dir = 'temporal_attn_results/'
+model_bert_textbook_dir = 'bert_mlm/80_10_10/bert_mlm_textbook'
+textbook_chronological_dir = 'final_textbook_contexts/block_128maxdist_50/'
+results_pp_dir = 'temporal_pp_results_{}_50/'.format(num_context_tokens)
 results_pp_path = results_pp_dir + "all_results.txt"
-results_attn_path = results_attn_dir + "all_results.txt"
+results_attn_dir = 'temporal_attn_examples_{}_50/'.format(num_context_tokens)
 
 # Load tokenizer and model
 tokenizer = AutoTokenizer.from_pretrained(model_bert_pretrained)
@@ -48,6 +50,11 @@ torch.set_grad_enabled(False)
 mask_token, mask_id = tokenizer.mask_token, tokenizer.mask_token_id
 cls_token, cls_id = tokenizer.cls_token, tokenizer.cls_token_id
 sep_token, sep_id = tokenizer.sep_token, tokenizer.sep_token_id
+
+# Save interesting examples for attention maps in format: [(tokens_tensor, segments_tensor, tokenized_text, tokenized_info, norm_prob)]
+attn_pr_25 = []
+attn_pr_45_55 = []
+attn_pr_9999 = []
 
 def _get_attn_and_mask_probs(inputs, masked_position):
     # Forward
@@ -67,43 +74,53 @@ def _add_perplexity_values(context, pp_year, direct_comp=True):
     segments_tensor = torch.tensor(segments_tensor)
     gender_index, query_index, gender_word, query_word = sentence_info
 
-    # Mask the target gender word
-    inputs = tokens_tensor
-    inputs[0][gender_index] = mask_id
-    masked_position = gender_index
+    if len(tokenized_text) == num_context_tokens:
+        # Mask the target gender word
+        inputs = tokens_tensor
+        inputs[0][gender_index] = mask_id
+        masked_position = gender_index
 
-    probs, attention = _get_attn_and_mask_probs(inputs, masked_position)
+        probs, attention = _get_attn_and_mask_probs(inputs, masked_position)
 
-    if direct_comp:
-        # Get probability of token <pronoun>
-        pronoun_id = tokenizer.convert_tokens_to_ids(gender_word)
-        pronoun_prob = probs[pronoun_id].item()
-        # Get probability of token <opposite_pronoun>
-        opp_pronoun = pronoun_oppos[gender_word]
-        opp_pronoun_id = tokenizer.convert_tokens_to_ids(opp_pronoun)
-        opp_pronoun_prob = probs[opp_pronoun_id].item()
-        gender_prob = pronoun_prob
-        opp_gender_prob = opp_pronoun_prob
-    else:
-        man_prob = 0
-        woman_prob = 0
-        for m_word in man_words_set:
-            pronoun_id = tokenizer.convert_tokens_to_ids(m_word)
-            man_prob += probs[pronoun_id].item()
-        for w_word in woman_words_set:
-            pronoun_id = tokenizer.convert_tokens_to_ids(w_word)
-            woman_prob += probs[pronoun_id].item()
-        gender_prob = man_prob if gender_word in man_words_set else woman_prob
-        opp_gender_prob = woman_prob if gender_word in man_words_set else man_prob
+        if direct_comp:
+            # Get probability of token <pronoun>
+            pronoun_id = tokenizer.convert_tokens_to_ids(gender_word)
+            pronoun_prob = probs[pronoun_id].item()
+            # Get probability of token <opposite_pronoun>
+            opp_pronoun = pronoun_oppos[gender_word]
+            opp_pronoun_id = tokenizer.convert_tokens_to_ids(opp_pronoun)
+            opp_pronoun_prob = probs[opp_pronoun_id].item()
+            gender_prob = pronoun_prob
+            opp_gender_prob = opp_pronoun_prob
+        else:
+            man_prob = 0
+            woman_prob = 0
+            for m_word in man_words_set:
+                pronoun_id = tokenizer.convert_tokens_to_ids(m_word)
+                man_prob += probs[pronoun_id].item()
+            for w_word in woman_words_set:
+                pronoun_id = tokenizer.convert_tokens_to_ids(w_word)
+                woman_prob += probs[pronoun_id].item()
+            gender_prob = man_prob if gender_word in man_words_set else woman_prob
+            opp_gender_prob = woman_prob if gender_word in man_words_set else man_prob
 
-    norm_prob = gender_prob / (gender_prob + opp_gender_prob)
-    correctness = 1 if norm_prob > 0.5 else 0
+        norm_prob = gender_prob / (gender_prob + opp_gender_prob)
+        correctness = 1 if norm_prob > 0.5 else 0
 
-    if (gender_word, query_word) not in pp_year:
-        pp_year[(gender_word, query_word)] = []
-    pp_year[(gender_word, query_word)].append((norm_prob, correctness))
+        if (gender_word, query_word) not in pp_year:
+            pp_year[(gender_word, query_word)] = []
+        pp_year[(gender_word, query_word)].append((norm_prob, correctness))
+
+        # Add interesting contexts for attention analysis
+        if norm_prob < 0.25: # high confidence, incorrect prediction
+            attn_pr_25.append((tokens_tensor, segments_tensor, tokenized_text, sentence_info, norm_prob))
+        elif norm_prob > 0.45 and norm_prob < 0.55: # low confidence
+            attn_pr_45_55.append((tokens_tensor, segments_tensor, tokenized_text, sentence_info, norm_prob))
+        elif norm_prob > 0.9999: # high confidence, correct prediction
+            attn_pr_9999.append((tokens_tensor, segments_tensor, tokenized_text, sentence_info, norm_prob))
 
 def get_temporal_perplexity_and_attention_values():
+    # Each entry of pp is a dictionary formatted as: {year:{(gender_word, query_word): [(norm_prob, correctness)]}}
     pp = {}
     pp[("woman", "work")] = {}
     pp[("man", "work")] = {}
@@ -111,7 +128,7 @@ def get_temporal_perplexity_and_attention_values():
     pp[("man", "home")] = {}
     pp[("woman", "achiev")] = {}
     pp[("man", "achiev")] = {}
-    # Each entry of pp is a dictionary formatted as: {year:{(gender_word, query_word): [(norm_prob, correctness)]}}
+
     for year_dir in os.listdir(os.fsencode(textbook_chronological_dir)):
         dirname = os.fsdecode(year_dir)
         if dirname.endswith(".txt"): # currently directories have .txt extension
@@ -127,82 +144,96 @@ def get_temporal_perplexity_and_attention_values():
                         pp[(gender_category, query_category)][year] = {}
                     data = utilities.read_context_windows(textbook_chronological_dir + dirname + "/" + filename)
                     for context in data:
-                        _add_perplexity_values(context, pp[(gender_category, query_category)][year])
-            # break
+                        _add_perplexity_values(context, pp[(gender_category, query_category)][year], False)
+    
     with open(results_pp_path, "w") as output:
         output.write(str(pp))
     return pp
 
 def _get_years_and_probs_and_acc(pp_year, interest_word):
-    years = []
-    probs = [] # one list per year
-    year_to_correctness = {}
-    acc = []
+    years = [] # one year per time period, can correspond to empty probs/corr
+    probs = [] # one list per year, can be empty list
+    corr = [] # one list per year, can be empty list
 
     for year in sorted(pp_year.keys()):
         pp_dict = pp_year[year]
-        probs_yr = []
+        probs_yr, corr_yr = [], []
         for words in pp_dict:
             gender_word, query_word = words
             if query_word == interest_word:
                 for (norm_prob, correctness) in pp_dict[words]:
                     probs_yr.append(norm_prob)
-                    if year not in year_to_correctness:
-                        year_to_correctness[year] = []
-                    year_to_correctness[year].append(correctness)
-                probs.append(probs_yr)
-                break
-
-    for year in sorted(year_to_correctness.keys()):
-        corr_arr = year_to_correctness[year]
+                    corr_yr.append(correctness)
         years.append(year)
-        acc.append(np.mean(corr_arr))
+        probs.append(probs_yr)
+        corr.append(corr_yr)
+
+    if len(years) != len(probs) or len(years) != len(corr):
+        print('error (lengths of plot input don\'t match):', len(years), len(probs), len(corr))
                         
-    return years, probs, acc
+    return years, probs, corr
 
 def plot_temporal_preds(woman_pp, man_pp, interest_word, liwc_category):
-    woman_years, woman_probs, woman_acc = _get_years_and_probs_and_acc(woman_pp, interest_word)
-    man_years, man_probs, man_acc = _get_years_and_probs_and_acc(man_pp, interest_word)
-    if not woman_years or not man_years:
+    woman_years, woman_probs, woman_corr = _get_years_and_probs_and_acc(woman_pp, interest_word)
+    man_years, man_probs, man_corr = _get_years_and_probs_and_acc(man_pp, interest_word)
+    if not woman_years or not man_years: # empty years list
         return
-    # Make accuracy scatter plots
+
+    # Make accuracy line plots
     woman_years = np.array(list(map(int,woman_years)))
-    man_years = np.array(list(map(int,woman_years)))
-    plt.scatter(woman_years, woman_acc, color='r', label='woman words', marker="*")
-    plt.scatter(man_years, man_acc, color='b', label='man words', marker="o")
-    plt.xlabel('Approximate Year')
-    plt.ylabel('Gender-Prediction Accuracy\nusing context with "%s"'%interest_word)
-    plt.title('Temporal Analysis of MLM Gender-Prediction Accuracy\n(Word: %s, LIWC Category: %s)'%(interest_word, liwc_category))
-    plt.legend()
-    plt.savefig(results_pp_dir + interest_word + "_temporal_acc_plot.png")
-    plt.close()
+    man_years = np.array(list(map(int,man_years)))
+    woman_years_acc = []
+    woman_acc = []
+    for year, x in zip(woman_years, woman_corr):
+        if len(x) >= 1:
+            woman_years_acc.append(year)
+            woman_acc.append(statistics.mean(x))
+    man_years_acc = []
+    man_acc = []
+    for year, x in zip(man_years, man_corr):
+        if len(x) >= 1:
+            man_years_acc.append(year)
+            man_acc.append(statistics.mean(x))
+    if woman_years_acc or man_years_acc:
+        fig, ax = plt.subplots()
+        ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+        plt.plot(woman_years_acc, woman_acc, color='r', label='woman words', marker="*")
+        plt.plot(man_years_acc, man_acc, color='b', label='man words', marker="o")
+        plt.xlabel('Approximate Year')
+        plt.ylabel('Gender-Prediction Accuracy\nusing context with "%s"'%interest_word)
+        plt.title('Temporal Analysis of MLM Gender-Prediction Accuracy\n(Word: %s, LIWC Category: %s)'%(interest_word, liwc_category))
+        plt.legend()
+        plt.savefig(results_pp_dir + interest_word + "_temporal_acc_plot.png")
+        plt.close()
 
     # Make normalized prob mean-standard error plot
-    all_years = [x for x in range(1300,2050,50)]
     woman_years_se = []
     woman_errors_se = []
     woman_pr_se = []
-    for year, x in zip(all_years, woman_probs):
+    for year, x in zip(woman_years, woman_probs):
         if len(x) > 1:
-            woman_sims_se.append(statistics.mean(x))
+            woman_pr_se.append(statistics.mean(x))
             woman_errors_se.append(statistics.stdev(x))
             woman_years_se.append(year)
     man_years_se = []
     man_errors_se = []
-    man_sims_se = []
-    for year, x in zip(all_years, man_probs):
+    man_pr_se = []
+    for year, x in zip(man_years, man_probs):
         if len(x) > 1:
-            man_sims_se.append(statistics.mean(x))
+            man_pr_se.append(statistics.mean(x))
             man_errors_se.append(statistics.stdev(x))
             man_years_se.append(year)
-    plt.errorbar(woman_years_se, woman_sims_se, yerr=woman_errors_se, fmt='o', label='woman words', color='r', capsize=5)
-    plt.errorbar(man_years_se, man_sims_se, yerr=man_errors_se, fmt='o', label='man words', color='b', capsize=5)
-    plt.xlabel('Approximate Year')
-    plt.ylabel('Normalized Prediction Probability between genders\nusing context with "%s"'%interest_word)
-    plt.title('Temporal Analysis of MLM Gender-Prediction Probability\n(Word: %s, LIWC Category: %s)'%(interest_word, liwc_category))
-    plt.legend()
-    plt.savefig(results_dir + interest_word + "_temporal_prob_plot.png")
-    plt.close()
+    if woman_years_se or man_years_se:
+        fig, ax = plt.subplots()
+        ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+        plt.errorbar(woman_years_se, woman_pr_se, yerr=woman_errors_se, fmt='o', label='woman words', color='r', capsize=5)
+        plt.errorbar(man_years_se, man_pr_se, yerr=man_errors_se, fmt='o', label='man words', color='b', capsize=5)
+        plt.xlabel('Approximate Year')
+        plt.ylabel('Normalized Prediction Probability between genders\nusing context with "%s"'%interest_word)
+        plt.title('Temporal Analysis of MLM Gender-Prediction Probability\n(Word: %s, LIWC Category: %s)'%(interest_word, liwc_category))
+        plt.legend()
+        plt.savefig(results_pp_dir + interest_word + "_temporal_prob_plot.png")
+        plt.close()
 
 def generate_plots(pp):
     for work_word in work_words:
@@ -217,10 +248,21 @@ def generate_plots(pp):
 
 def main():
     start_time = time.perf_counter()
+
     gpu_check()
     os.makedirs(results_pp_dir, exist_ok=True)
+    os.makedirs(results_attn_dir, exist_ok=True)
     pp = get_temporal_perplexity_and_attention_values()
     generate_plots(pp)
+    
+    # Output interesting contexts for attention analysis
+    with open(results_attn_dir + "pr_0.25.txt", "w") as output:
+        output.write(str(attn_pr_25))
+    with open(results_attn_dir + "pr_0.45_0.55.txt", "w") as output:
+        output.write(str(attn_pr_45_55))
+    with open(results_attn_dir + "pr_0.9999.txt", "w") as output:
+        output.write(str(attn_pr_9999))
+
     end_time = time.perf_counter()
     print(f"This took {(end_time - start_time)/60:0.4f} minutes")
 
