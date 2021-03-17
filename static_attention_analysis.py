@@ -117,6 +117,24 @@ def extract_attentions(weights, word, category=None):
     return np.array(all_weights)
     # later: can also break down by gender
 
+def find_maximum_weights(weights, word, category=None):
+    current_max = 0
+    current_max_sentence_data = None
+    for entry in weights[word]:
+        sentence_data, attending_weights = entry
+        if category:
+            tokens_tensor, segments_tensor, tokenized_text, sentence_info = sentence_data
+            gender_index, query_index, gender_word, query_word = sentence_info
+            if _get_category(gender_word) != category:
+                continue
+        # only consider layers 4 through 8, inclusive
+        attending_weights = np.array(attending_weights[4:9]).flatten()
+        if max(attending_weights) > current_max:
+            current_max = max(attending_weights)
+            current_max_sentence_data = sentence_data
+    return current_max_sentence_data, current_max
+
+
 def analyze_results(weights):
     # most basic: compare averages and do a t-test
     work_attentions = extract_attentions(weights, "work")
@@ -139,11 +157,22 @@ def analyze_results(weights):
     workers_t_val, workers_p_val = stats.ttest_ind(workers_man_attentions, workers_woman_attentions)
     workers_man_avg = np.mean(work_man_attentions)
     workers_woman_avg = np.mean(workers_woman_attentions)
-    with open(results_folder + stats_tests_file, "a")as output:
+    with open(results_folder + stats_tests_file, "a") as output:
         output.write("Work: man vs woman attentions have averages %f and %f respectively and t-value %f and p-value %f \n"
         %(work_man_avg, work_woman_avg, work_t_val, work_p_val))
         output.write("Workers: man vs woman attentions have averages %f and %f respectively and t-value %f and p-value %f \n"
         %(workers_man_avg, workers_woman_avg, workers_t_val, workers_p_val))
+
+    # get the relevant max to visualize later
+    maxes = {}
+    maxes["work"] = find_maximum_weights(weights, "work")
+    maxes["workers"] = find_maximum_weights(weights, "workers")
+    maxes[("work", "man")] = find_maximum_weights(weights, "work", "man")
+    maxes[("work", "woman")] = find_maximum_weights(weights, "work", "woman")
+    maxes[("workers_avg", "man")] = find_maximum_weights(weights, "workers", "man")
+    maxes[("workers", "woman")] = find_maximum_weights(weights, "workers", "woman")
+    with open(results_folder + "relevant_max.txt", "w") as output:
+        output.write(str(maxes))
 
 def main():
     # print(utilities.count_words_per_line("final_textbook_years/all_textbooks/1700.txt"))
