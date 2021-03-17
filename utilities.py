@@ -1,6 +1,7 @@
 """Utility functions"""
 
 import ast
+import re
 
 import numpy as np
 import torch
@@ -34,6 +35,17 @@ def read_data(path):
     """Read data as-is from a path"""
     with open(path) as f:
         data = f.read()
+        data = ast.literal_eval(data)
+    return data
+
+def read_attention_weights(path):
+    with open(path) as f:
+        data = f.read()
+        data = data.replace("\t","")
+        data = data.replace("\n", "")
+        data = data.replace(" ", "")
+        data = data.replace(",dtype=float32", "")
+        data = data.replace("array", "")
         data = ast.literal_eval(data)
     return data
 
