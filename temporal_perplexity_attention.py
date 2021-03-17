@@ -29,13 +29,14 @@ for i, man_word in enumerate(man_words):
     pronoun_oppos[woman_words[i]] = man_word
 
 # Directories
-num_context_tokens = 128
+num_context_tokens = 512
 model_bert_pretrained = 'bert-base-uncased'
-model_bert_textbook_dir = 'bert_mlm/80_10_10/bert_mlm_textbook'
-textbook_chronological_dir = 'final_textbook_contexts/block_128maxdist_50/'
-results_pp_dir = 'temporal_pp_results_{}_50/'.format(num_context_tokens)
+# model_bert_textbook_dir = 'bert_mlm/80_10_10/bert_mlm_textbook'
+model_bert_textbook_dir = model_bert_pretrained
+textbook_chronological_dir = 'final_textbook_contexts/512_tokens/'
+results_pp_dir = 'temporal_pp_results_{}_pre/'.format(num_context_tokens)
 results_pp_path = results_pp_dir + "all_results.txt"
-results_attn_dir = 'temporal_attn_examples_{}_50/'.format(num_context_tokens)
+results_attn_dir = 'temporal_attn_examples_{}_pre/'.format(num_context_tokens)
 
 # Load tokenizer and model
 tokenizer = AutoTokenizer.from_pretrained(model_bert_pretrained)
