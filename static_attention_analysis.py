@@ -9,6 +9,7 @@ from transformers import AutoModelForMaskedLM
 
 import extract_embeddings_v1
 import finetune_bert
+from temporal_analysis_cosine_v1 import _get_category
 import utilities
 
 # Tokenizer and model used throughout
@@ -31,7 +32,7 @@ max_dist = 'maxdist_100'
 config = context_size + max_dist
 textbook_chronological_dir = 'final_textbook_contexts/' + config + '/'
 
-LOAD_RESULTS = False # change this to False to rerun embedding extraction and get new results (will override folder!)
+LOAD_RESULTS = True # change this to False to rerun embedding extraction and get new results (will override folder!)
 results_folder = 'static_attention_analysis_results_' + config + '/'
 results_path = results_folder + "all_results.txt"
 stats_tests_file = 'stats_tests.txt'
@@ -99,15 +100,20 @@ def attention_analysis():
         output.write(str(weights))
     return weights
 
-def extract_attentions(weights, word):
+def extract_attentions(weights, word, category=None):
     all_weights = []
     for entry in weights[word]:
         sentence_data, attending_weights = entry
+        if category:
+            tokens_tensor, segments_tensor, tokenized_text, sentence_info = sentence_data
+            gender_index, query_index, gender_word, query_word = sentence_info
+            if _get_category(gender_word) != category:
+                continue
         attending_weights = np.array(attending_weights)
         if len(all_weights) == 0:
             all_weights = attending_weights.flatten()
         else:
-            all_weights += attending_weights.flatten()
+            all_weights = np.concatenate((all_weights,attending_weights.flatten()), axis=0)
     return np.array(all_weights)
     # later: can also break down by gender
 
@@ -122,6 +128,23 @@ def analyze_results(weights):
         output.write("Work vs workers attentions have averages %f and %f respectively and t-value %f and p-value %f \n"
         %(work_avg, workers_avg, t_val, p_val))
 
+    # compare gender-specific attentions between each and do t-tests
+    work_man_attentions = extract_attentions(weights, "work", "man")
+    work_woman_attentions = extract_attentions(weights, "work", "woman")
+    workers_man_attentions = extract_attentions(weights, "workers", "man")
+    workers_woman_attentions = extract_attentions(weights, "workers", "woman")
+    work_t_val, work_p_val = stats.ttest_ind(work_man_attentions, work_woman_attentions)
+    work_man_avg = np.mean(work_man_attentions)
+    work_woman_avg = np.mean(work_woman_attentions)
+    workers_t_val, workers_p_val = stats.ttest_ind(workers_man_attentions, workers_woman_attentions)
+    workers_man_avg = np.mean(work_man_attentions)
+    workers_woman_avg = np.mean(workers_woman_attentions)
+    with open(results_folder + stats_tests_file, "a")as output:
+        output.write("Work: man vs woman attentions have averages %f and %f respectively and t-value %f and p-value %f \n"
+        %(work_man_avg, work_woman_avg, work_t_val, work_p_val))
+        output.write("Workers: man vs woman attentions have averages %f and %f respectively and t-value %f and p-value %f \n"
+        %(workers_man_avg, workers_woman_avg, workers_t_val, workers_p_val))
+
 def main():
     # print(utilities.count_words_per_line("final_textbook_years/all_textbooks/1700.txt"))
     start_time = time.perf_counter()
@@ -130,7 +153,7 @@ def main():
     if not LOAD_RESULTS:
         weights = attention_analysis()
     else:
-        weights = utilities.read_data(results_path)
+        weights = utilities.read_attention_weights(results_path)
     analyze_results(weights)
     end_time = time.perf_counter()
     print(f"This took {(end_time - start_time)/60:0.4f} minutes")
