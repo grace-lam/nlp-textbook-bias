@@ -33,7 +33,7 @@ num_context_tokens = 512
 model_bert_pretrained = 'bert-base-uncased'
 model_bert_textbook_dir = 'bert_mlm/80_10_10/bert_mlm_textbook'
 # model_bert_textbook_dir = model_bert_pretrained
-textbook_chronological_dir = 'final_textbook_contexts/block_512maxdist_100/'
+textbook_chronological_dir = 'final_textbook_contexts/512_tokens/' #block_512maxdist_100/'
 # results_pp_dir = 'temporal_pp_results_{}_plot/'.format(num_context_tokens)
 # results_pp_path = results_pp_dir + "all_results.txt"
 results_attn_dir = 'temporal_attn_examples_{}_plot/'.format(num_context_tokens)
@@ -135,6 +135,8 @@ def get_temporal_perplexity_and_attention_values():
     pp[("woman", "achiev")] = {}
     pp[("man", "achiev")] = {}
 
+    ctr = 1
+
     for year_dir in os.listdir(os.fsencode(textbook_chronological_dir)):
         dirname = os.fsdecode(year_dir)
         if dirname.endswith(".txt"): # currently directories have .txt extension
@@ -151,7 +153,11 @@ def get_temporal_perplexity_and_attention_values():
                     data = utilities.read_context_windows(textbook_chronological_dir + dirname + "/" + filename)
                     for context in data:
                         _add_perplexity_values(context, pp[(gender_category, query_category)][year], False)
-    
+        if ctr >= 2:
+            break
+
+        ctr += 1
+
     # with open(results_pp_path, "w") as output:
     #     output.write(str(pp))
     return pp
@@ -262,7 +268,7 @@ def main():
     # generate_plots(pp)
     
     # Output interesting contexts for attention analysis
-    for bucket, attn_ex in attn_pr_examples:
+    for bucket, attn_ex in attn_pr_examples.items():
         with open(results_attn_dir + "pr_%d.txt"%(bucket), "w") as output:
             output.write(str(attn_ex))
     # with open(results_attn_dir + "pr_0.45_0.55.txt", "w") as output:
