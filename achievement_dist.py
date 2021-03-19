@@ -46,6 +46,13 @@ for file in os.listdir(os.fsencode(textbook_chronological_dir)):
                          woman_dists[year].append(abs(woman_index - achievement_index))
      print("finished one file")
 
+woman_all_dists = []
+man_all_dists = []
+for year in woman_dists:
+    woman_all_dists = np.concatenate((np.array(woman_dists[year]), np.array(woman_all_dists)), axis = 0)
+    man_all_dists = np.concatenate((np.array(man_dists[year]), np.array(man_all_dists)), axis = 0)
+print(np.mean(woman_all_dists))
+print(np.mean(man_all_dists))
 
 # Make mean-standard error plot
 all_years = [x for x in range(1300,2050,50)]
@@ -70,8 +77,8 @@ for year in woman_dists:
 plt.errorbar(woman_years_se, woman_dists_se, yerr=woman_errors_se, fmt='o', label='woman words', color='r', capsize=5)
 plt.errorbar(man_years_se, man_dists_se, yerr=man_errors_se, fmt='o', label='man words', color='b', capsize=5)
 plt.xlabel('Approximate Year')
-plt.ylabel('Average Number of Tokens Between \n Achievement word and Gender word')
-plt.title('Distance between Gender words \n and Achievement Words')
+plt.ylabel('Average Number of Words')
+plt.title('Average Number of Words Between Achievement Words \n and Man vs Woman Words')
 plt.legend()
 plt.savefig("achievement_dist.png")
 plt.close()
